@@ -26,7 +26,7 @@ envelope and the modulator. The modulator's WAVE destination moves the voice's m
 The front's TIMBRE and MORPH move the two sliders in `ENG_MACROS[]` (`src/engines.c`). Each voice's home sound (the
 chain it starts with on a track, and VOICE RESET's) is in `src/sound.c` (`HOME[]`).
 
-## 2. The sixteen voices
+## 2. The nineteen voices
 
 | Voice | Where from | How it works |
 |---|---|---|
@@ -46,9 +46,26 @@ chain it starts with on a track, and VOICE RESET's) is in `src/sound.c` (`HOME[]
 | LXR TONE | the LXR's tables (LXR02Open) | the LXR drum voice's oscillator and FM modulator on the LXR's band-limited tables, an FM envelope, decimation |
 | LXR METAL | written here, after the LXR's hi-hat | six square oscillators at metallic ratios (808 hats, cymbal, bell, gong), FM, ring modulation, noise, a band-pass above the note |
 | BAZZ | LXRXXL BAZZLINE | BAZZLINE's VCO / FM / WAVE oscillator on the LXR's tables, with an octave range, the sub's octave, drift and its tone filter |
+| DRONE | written here, after BAZZ | two to seven oscillators (sine to square) on an interval stack (unison, octaves, fifths, chords, cluster), detuned and drifting, their waves moving slowly, beating, the upper ones blooming in, a sub and a shimmer |
+| TEXTURE | written here, after the LXR's noise and metal | noise, metallic partials and dust in one SOURCE, resonators tuned to the note, slow motion, wind, sparkles, a rumble and a short space |
+| FX | written here, after the LXR voice | eight sweeping effects (laser, zap, riser, fall, siren, alarm, glitch, bomb) with repeats, chaos, wobble, crush, noise, ring and a feedback comb |
+
+Every voice has **20 controls** (`tools/voices.py`): V1-V6 its main ones, V7-V12 its deeper ones (read by the
+engine itself), V13-V20 the same eight kinds on every voice (OCTAVE, FINE, VIBRATO, a modulation envelope's ATTACK
+and DECAY, the envelope to two of the voice's controls, velocity to one), applied in `src/voice.c`.
+
+## 2b. CHAOS and SHIFT (`src/alien.c`)
+
+- **CHAOS:** a Lorenz attractor (σ 10, ρ 28, β 8/3) integrated per block (Euler, steps of at most 0.004), blended
+  (WILD) with a calm orbit of two sines; each track reads it from its own angle, smoothed over 30 ms, times the
+  PANEL's depth and its MIXER amount, into PITCH, CUTOFF, TIMBRE, PAN or ALL (`voice.c`).
+- **SHIFT:** a send bus; a Hilbert transformer (two chains of four first-order all-passes, Olli Niemitalo's
+  coefficients, chain A one sample later) times a quadrature oscillator (a frequency shift, the other side about
+  56 dB down), or a ring modulator; feedback through a soft clip; its level into the mix after the delay.
 
 ## 3. What came from LXRXXL BAZZLINE (unchanged)
 
-The sequencer (`seq.c`), the front panel's logic (`ui.c`), the delay and the gate/duck (`fx.c`), the mixer, the
+The sequencer (`seq.c`), the front panel's logic (`ui.c`), the delay (`fx.c`; its gate/duck is no longer used), the mixer, the
 presets (`preset.c`), the state chunk (`store.c`) and the Force integration (`engine.c`, the VST2 wrapper). The
-randomizers (`random.c`) are LXRXXL's, for these tracks.
+randomizers began as LXRXXL's; in 0.2.0 SOUND RANDOM (`random.c`) is voice-aware and STEP RANDOM (`seqgen.c`) a
+melodic generator (the user guide explains both).

@@ -1,265 +1,64 @@
 # LXRXXL ZYNTH v0.2.0
 
 ![LXRXXL ZYNTH, the front panel](docs/img/panel.png)
-![LXRXXL ZYNTH, the MODULES page](docs/img/modules.png)
-![LXRXXL ZYNTH, the FX MIXER page](docs/img/fx_mixer.png)
 
-**An 8-track synth for the Akai Force and MPC (MPC OS 3.x, VST2 through
-[mpc-vst-plugins](https://github.com/sd88me/mpc-vst-plugins)).**
+**An experimental synth for Force and MPC: 19 coded voices on unconventional maths.** A Lorenz-attractor CHAOS, a
+Hilbert-transform frequency SHIFTer, Euclidean rhythms and sine-wave melodies, and voices coded after the Yamaha DX7
+(FM6), the Casio CZ (PHASE), the Minimoog (TRIO), Hammond tonewheels (WHEEL), NES and console chips (CHIP), Mutable
+Instruments Braids (MACRO) and Plaits (WAVE, PHYS), the LXR-02's drum voices (LXR TONE, LXR METAL) and the Erica
+Synths DB-01 bass via LXRXXL BAZZLINE (BAZZ). Plus ANALOG, FM4, VOICE, GRAIN, NOISE, DRONE, TEXTURE and FX.
 
-LXRXXL ZYNTH is a variation of [LXRXXL BAZZLINE](https://github.com/sunskiefer/LXRXXL-BAZZLINE), itself a variation of
-[LXRXXL](https://github.com/sunskiefer/LXR02XXL) (a port of the open-source Sonic Potions LXR engine inspired by the
-Erica Synths LXR-02). It keeps everything of BAZZLINE: the LXR-02 style step sequencer with the DB-01's step functions,
-the way it runs on the Force (MPC's grid and transport, the panel on the touchscreen, the project saved with MPC's),
-the same knobs, the voice chain (FM, sub, noise, swarm, drive, Polivoks or diode filter, accent, slide), the delay,
-the gate/duck, the mixer and the presets. What is new:
+A native VST2 instrument for the Akai Force and MPC standalone (MPC OS 3.x, through
+[mpc-vst-plugins](https://github.com/sd88me/mpc-vst-plugins)), with four full-screen pages of artwork by Suns Kiefer.
 
-- **Sixteen voices, one per track:** each track picks its voice with the VOICE selector on the MODULES page. The six
-  sliders on the left of MODULES become that voice's six most important controls, and their label windows show
-  their names.
-- **Each voice keeps its character:** a voice first picked on a track starts from its **home sound**, the chain set
-  so the voice sounds as itself (held voices held, plucked and struck ones ringing, BAZZ as BAZZLINE's bass). And each
-  track remembers **every voice's whole sound** (its sliders and the chain: filter, envelopes, drive, FM...): switch
-  FM6 to GRAIN and back, and the FM6 sound is as you left it.
-- **A performance front page:** TIMBRE and MORPH (the voice's two most expressive controls), the amp **ADSR**
-  (ATTACK, DECAY, SUSTAIN, RELEASE), the filter, MOD RATE / MOD DEPTH and SUB.
-- **STEP RANDOM writes music:** chords, arpeggios, leads and bass lines over a harmony each pattern keeps, chosen by
-  each track's voice, with step velocities. **SOUND RANDOM** goes for a character that suits the voice.
-- New artwork from Suns Kiefer's BAZZLINE panel: a vein texture and an ice-blue accent.
+**→ The full manual: [docs/USER_GUIDE.md](docs/USER_GUIDE.md)** (every page and control, the 19 voices and their 152
+starter sounds, the sequencer, the randomizers, CHAOS and SHIFT, presets, Q-Links, recipes, every key combination).
 
-The voices were chosen after the custom firmwares of the M-VAVE FM-1 (Felucca, Sloop, Baud Girl), the Dirtywave M8
-and LXRXXL's own voices. **No code from those firmwares or from the M8 is used** (the FM-1 firmwares are GPL-3, which
-can't be combined with the LXR02 license, and the M8 is closed): the voices are written here, or come from Mutable
-Instruments' MIT-licensed Braids and Plaits.
+## What it is
 
-**Tested on an Akai Force** (MPC OS 3.9.1, see `tested.json`). Downloads: [Releases](https://github.com/sunskiefer/LXRXXL-ZYNTH/releases).
-Every build is also tested offline (see [Testing](#testing)). Report anything odd under Issues.
+- **Eight tracks, each a monophonic synth with its own step sequence** (up to 64 steps, 64 patterns), the LXR-02 /
+  DB-01 style sequencer of [LXRXXL BAZZLINE](https://github.com/sunskiefer/LXRXXL-BAZZLINE), on MPC's tempo and
+  transport.
+- **Each track picks one of 19 voices**, each with **20 controls of its own** in two rows of faders on the VOICE page,
+  and **8 starter sounds**. Each track remembers every voice's whole sound; a voice first picked starts from its home
+  sound, true to the machine it was coded after.
+- **The shared chain:** FM on any voice, SUB, NOISE, the swarm (BBD or UNISON), DRIVE, the Polivoks or diode-ladder
+  filter with its ADSR, the amp ADSR, the pitch envelope, a modulator, accent and slide.
+- **A performance front page:** TIMBRE and MORPH (the voice's two most expressive controls), the filter, the ADSR,
+  the modulator, CHAOS and SHIFT, the randomizers.
+- **STEP RANDOM writes music:** chords, arpeggios, leads, bass lines and hits over a harmony each pattern keeps
+  (10 080 harmonies), by formulas chosen from each track's voice, with step velocities and a setup on the step keys.
+- **SOUND RANDOM** makes a new sound that suits the voice (PAD, LEAD, PLUCK, KEYS, RING, BELL, ACID...).
+- **CHAOS:** a Lorenz attractor moving every track's pitch, cutoff, timbre or pan, each from its own angle: it never
+  repeats. **SHIFT:** a frequency shifter / ring modulator on a send bus: every partial moved by the same number of Hz,
+  with a barber-pole feedback.
+- **A tape / digital delay, an 8-track mixer** (pan, delay send, CHAOS and SHIFT per track, mute, solo), **sound and
+  performance presets** on the device.
 
-## The three pages
+**The four pages:**
 
-MPC shows three tabs, each filling the whole screen: **PANEL**, **MODULES** and **FX MIXER**. PANEL and MODULES edit
-the **selected track**: pick a track with TRACK 1-8 (PANEL) or TRACK (MODULES) and every knob and slider shows that
-track's sound. FX MIXER has the delay, the gate/duck and a mixer of all eight tracks. Every knob turns in place.
-MODULES and FX MIXER have a **readout** in big letters: the control you last touched, its track and its value
-(`T3   CUTOFF   75`, `T1   FM6 TIMBRE: MOD INDEX   35`, `DELAY TIME   400 ms`).
+| PANEL | VOICE | FX MOD | MIXER |
+|---|---|---|---|
+| ![PANEL](docs/img/panel.png) | ![VOICE](docs/img/voice.png) | ![FX MOD](docs/img/fx_mod.png) | ![MIXER](docs/img/mixer.png) |
 
-### PANEL (the front)
+No code from the FM-1 firmwares (Felucca, Sloop, Baud Girl: GPL-3, which can't be combined with the LXR02 license) or
+from the Dirtywave M8 (closed) is used, and no factory sounds of the machines named: the voices are written here, or
+come from Mutable Instruments' MIT-licensed Braids and Plaits.
 
-| Control | What it does |
-|---|---|
-| DRIVE | the overdrive, before or after the filter (MODULES: the POSITION and CURVE selectors) |
-| **TIMBRE / MORPH** | the two sliders that change the selected track's voice the most (they move the same sliders as MODULES; the readout names them): ANALOG PULSE WIDTH / SYNC, TRIO DETUNE / LEVEL 2, FM6 MOD INDEX / FEEDBACK, FM4 MOD INDEX / FEEDBACK, PHASE AMOUNT / ENV AMOUNT, WAVE POS X / WARP AMOUNT, CHIP BITS / SWEEP, MACRO TIMBRE / COLOR, WHEEL BRIGHT / LESLIE, VOICE VOWEL / FORMANT, PHYS STRUCTURE / BRIGHT, GRAIN DENSITY / POSITION, NOISE COLOR / RESO, LXR TONE FM AMOUNT / FM FREQ, LXR METAL SPREAD / FM AMOUNT, BAZZ WAVE POS / TONE |
-| VCF ENV / RESONANCE / CUTOFF | the filter envelope's amount, the resonance (self-oscillates at the top), the cutoff |
-| SUB: SQR / SAW / TRI | every voice but BAZZ: the SUB oscillator's wave (heard with SUB LVL up). BAZZ: its VCO's wave |
-| BP / LP | the filter's band-pass or low-pass output |
-| **ATTACK / DECAY / SUSTAIN / RELEASE** | the amp envelope, an ADSR: the rise, the fall to the SUSTAIN level, the level held while the note is, the fade after it (4 ms .. 4 s). SUSTAIN at the top holds the note; at the bottom the note dies away over DECAY |
-| MOD RATE / MOD DEPTH | the modulator's rate and depth (wave, destination and sync: MODULES). Its WAVE destination moves the voice's main slider |
-| SUB LVL | the sub oscillator, an octave down |
-| SELECT/GATE, BACK/NOTE | the step encoders, as on BAZZLINE |
-| DELAY: DRY/WET, TIME; DUCK RELEASE, GATE / DUCK | the delay's mix and time; the gate/duck's release and mode (as on FX MIXER) |
-| The display | the tempo (its last dot lit: MPC's tempo), a value while you turn it, the function in use |
-| TRACK 1-8, LINK, MUTE (SHIFT + MUTE = RESET) | as on BAZZLINE |
-| **The panic key** (the ice button under the TRACK keys) | VOICE RESET: the selected track's voice back to its **home sound** (its level and pan kept, the other voices' sounds kept); its steps stay. **SHIFT + it = MUTE ALL**: every track muted and silenced at once (it stays lit); SHIFT + it again unmutes them all |
-| **STEP RANDOM** (the yellow key, "?") | a new line on the **selected track** (see [STEP RANDOM](#step-random)). **SHIFT + it**: its setup. Its knob (the yellow one): the density |
-| **SOUND RANDOM** (the green key, the warning sign) | a new sound for the **selected track** (see [SOUND RANDOM](#sound-random)). **SHIFT + it**: every track. Its knob (the green one): how far it goes |
-| SHIFT, ▷, □, ○, ◄ BAR ►, -1 OCT / +1 OCT, TAP, the 16 step keys | as on BAZZLINE (SHIFT, then a step key: ACC, SLIDE, MOD, PITCH ENV, LAST STEP, PLAY MODE, TRANSP, SCALE, ARPEGG, LFO, RND PATT (= STEP RANDOM on the track), CLEAR, COPY, PASTE, BANK, PATTERN) |
+**Tested on an Akai Force:** 0.1.0 on MPC OS 3.9.1 (`tested.json`). Every build is tested offline (see
+[Testing](#testing)). Downloads: [Releases](https://github.com/sunskiefer/LXRXXL-ZYNTH/releases). Report anything odd
+under Issues.
 
-### MODULES (the voice and its modules)
+## Quick start
 
-| Section | Controls |
-|---|---|
-| **VOICE** (top left) | the selected track's voice: tap ◄ ►, or turn it with the data wheel or a Q-Link, or drag it. The display shows its name |
-| **The six voice sliders** | the voice's six controls; their label windows show their names, and the readout their value (`T2   WHEEL   LESLIE   FAST 60`) |
-| DRIVE | POSITION (PRE / POST the filter) and CURVE (SOFT / HARD / FOLD) |
-| ACCENT | AMOUNT, SWEEP (accents in a row push the filter further), SLIDE TIME |
-| **FM RATIO, FM LVL** (under SLIDE TIME) | FM on any voice: its ratio (1/4 .. 8) and its amount |
-| **AMP ENV** (the eight faders) | ATTACK, DECAY, SUSTAIN, RELEASE (the front's ADSR) |
-| **FILTER** | VCF ATK, VCF DEC (the filter envelope; its amount is the front's VCF ENV) |
-| **PITCH** | PITCH AMT (up to +4 octaves at the top), PITCH DEC |
-| FILTER (bottom) | MODEL (POLIVOKS 12 dB / DIODE ladder), KEY TRACK, **NOISE** (white noise into the filter) |
-| SWARM | MODE (BBD / UNISON: a second, detuned copy of the voice), RATE, SPREAD (the detune), MIX |
-| MODULATOR | WAVE (TRI SAW SQR S&H NOISE), DEST (PITCH CUTOFF DRIVE WAVE: the voice's main slider), FREE / TEMPO |
-| TRACK | the selected track, at the top |
+1. Install it (see [Installing](#installing)) and load **LXRXXL ZYNTH** (ANDREALPHEUS) on a plugin track.
+2. Press play: the factory project plays. TRACK 1-8 pick the track every knob shows.
+3. Turn **TIMBRE** and **MORPH**. On the **VOICE** page, **◄ ►** change the voice and **SOUND ◄ ►** its starter sounds.
+4. Tap **STEP RANDOM** (the yellow "?" key) on a few tracks: new parts over the pattern's harmony.
+5. Turn **CHAOS** and **SHIFT** (top right of the PANEL) up a little.
+6. Save it: FX MOD, **PERF**, a **SLOT**, **SAVE**, **SAVE**.
 
-LEVEL and PAN are on FX MIXER (each track's strip).
-
-### FX MIXER (the effects and the mixer)
-
-As on LXRXXL BAZZLINE: the delay (TIME, IN LVL, FEEDBACK, DRY/WET, ADD, HOLD, REVERSE, TAP SYNC, TAPE / DIGITAL), the
-MIDI-triggered gate/duck, the mixer of the eight tracks (PAN, DLY SEND, LEVEL, MUTE, SOLO), MASTER and the presets.
-
-## The randomizers
-
-Both work on **the selected track**, on its own: each track (and each voice) gets its own draw.
-
-### STEP RANDOM
-
-The yellow key writes a new line on the selected track of the playing pattern. Its knob is the **density**
-(10-100 %: from a few notes to every step).
-
-**The harmony.** Each pattern has a harmony every track generated in it plays over, so tracks generated one at a time
-fit together: a **key** (the root and a mode: MAJOR, MINOR, DORIAN, PHRYGIAN, LYDIAN, MIXOLYDIAN, HARMONIC MINOR), a
-**progression** of four chords over the pattern (one of 24: I-V-VI-IV, VI-IV-I-V, II-V-I, I-VI-III-VII...) and a
-**chord colour** (triads, sevenths, sus 2, sus 4, add 9). That makes 10 080 harmonies, and every press draws new
-numbers within them, so the same harmony gives a new line each time. The first STEP RANDOM in a pattern picks its
-harmony. A track whose SCALE is set keeps its own scale (from C).
-
-**What a track plays** follows its voice (its **style**, AUTO), or the style you set:
-
-| Style | Voices (AUTO) | What it writes |
-|---|---|---|
-| **BASS** | BAZZ | the chords' roots on an euclidean rhythm, with fifths, octaves, approach notes into the next chord, slides and off-beat accents |
-| **CHORD** | WAVE, WHEEL, GRAIN, TRIO, VOICE | one tone of each chord (track 1 the root, the next CHORD track the third, then the fifth...: chord tracks build the chords together), moved to the nearest octave (voice leading). Low density: held through the chord; middle: stabs; high: pulses |
-| **ARP** | CHIP, FM4, MACRO, PHASE | the chord's tones over one to three octaves in the order idx(i) = (a·i + b) mod m, a coprime with m: up, down and every leap-frog order in between, a new order per chord |
-| **LEAD** | ANALOG, FM6, PHYS, LXR TONE | a melody from two sine waves, y(i) = A1 sin(2πi/P1 + φ1) + A2 sin(2πi/P2 + φ2), read as scale degrees, landing on a chord tone on every beat, with breaths between phrases and slides between near notes |
-| **HITS** | LXR METAL, NOISE | sparse euclidean hits on the high chord tones |
-
-**Velocities.** Every step it writes has a velocity, by the track's velocity mode: **FLAT** (all 100), **GROOVE**
-(the beats strong, the off-beats soft: the default), **HUMAN** (around 100, loose), **SWELL** (rising through each
-chord). A velocity of 112 or more is an accent. Notes played into a track with REC on keep their velocity too.
-
-**The setup: SHIFT + STEP RANDOM** (the yellow key blinks, the display says `SET`, the readout shows the track's
-settings and the pattern's harmony). In the setup:
-
-| Key | Sets |
-|---|---|
-| Steps **1-8** (ACC .. SCALE) | the length it writes: **4, 8, 12, 16, 24, 32, 48, 64** steps (lit: the one set) |
-| Steps **9-12** (ARPEGG .. CLEAR) | the velocities: **FLAT, GROOVE, HUMAN, SWELL** (lit: the one set) |
-| Step **13** (COPY) | the style, round: AUTO, CHORD, ARP, LEAD, BASS, HITS (lit when not AUTO) |
-| Step **14** (PASTE) | the key's root a semitone up |
-| Step **15** (BANK) | the next mode |
-| Step **16** (PATTERN) | a new progression and chord colour (the key kept) |
-| **BACK/NOTE**, **SELECT/GATE** | the root, the mode |
-| **STEP RANDOM** | a new line on **every track** of the pattern, then back to the steps |
-| SHIFT | back to the steps |
-
-The length, velocities and style are each track's own; the harmony is the pattern's. COPY / PASTE and CLEAR carry
-the velocities with the steps.
-
-### SOUND RANDOM
-
-The green key makes a new sound for the selected track (SHIFT + it: every track), true to its voice:
-
-- **A character** that suits the voice's family: sustained voices go for PAD, LEAD, PLUCK or KEYS; struck voices
-  (PHYS, LXR TONE, LXR METAL) for RING, BLIP or BELL; BAZZ for ACID, SUB or PUNCH; and any voice now and then for
-  HOME, its home sound (more often at a low amount). The readout names it (`T1   SOUND RANDOM   50 %   PAD`). The
-  chain moves towards the character by the knob's amount, with a little random on top.
-- **The voice's own sliders** move by up to the amount; a slider that picks options (an algorithm, a wave, a model)
-  changes option with a chance of 0.7 x the amount.
-- **What can get harsh stays tame at low amounts:** DRIVE, RESONANCE, the pitch envelope, FM, NOISE and SUB have a
-  ceiling that only opens up as the amount goes up (with its square), and the cutoff stays open enough to be heard.
-- The voice, the level, the pan, the swarm's mode and the modulator's sync stay. A value never lands where it was,
-  nor back where it was before the last press.
-
-## The voices
-
-Each voice makes the raw tone of the track, which then goes through the same chain as LXRXXL BAZZLINE's voice:
-FM LVL, SUB, NOISE, SWARM, DRIVE, FILTER, VCA. The tracks are monophonic, as on BAZZLINE (and the M8): the
-sequencer's steps, the arpeggiator and slides play one note at a time per track.
-
-| Voice | V1 | V2 | V3 | V4 | V5 | V6 | What it is |
-|---|---|---|---|---|---|---|---|
-| **ANALOG** | WAVE | PULSE WIDTH | DETUNE | INTERVAL | SYNC | MIX | Two polyBLEP oscillators: saw to square, pulse width, the second one detuned or at an interval, or hard-synced to the first (its ratio sweeps with SYNC). |
-| **TRIO** | WAVE | OSC 2 INTERVAL | OSC 3 INTERVAL | DETUNE | LEVEL 2 | LEVEL 3 | Three oscillators, Minimoog style: saw to square, oscillators 2 and 3 at their own interval (-12..+12, -24..+24 semitones), a detune spread, their levels. |
-| **FM6** | ALGO | RATIO | MOD INDEX | FEEDBACK | DETUNE | BRIGHT | Six sine operators on the DX7's 32 algorithms: RATIO picks one of 16 sets of operator ratios, MOD INDEX the modulators' level, FEEDBACK, DETUNE spreads the operators, BRIGHT how long the modulators stay up after the attack. |
-| **FM4** | ALGO | RATIO B | RATIO C | MOD INDEX | FEEDBACK | DECAY | Four operators on 12 algorithms (op 4 with feedback): the ratios of op 2 (B) and op 3 (C), MOD INDEX, FEEDBACK, DECAY of the modulators. |
-| **PHASE** | WAVE | AMOUNT | ENV AMOUNT | ENV DECAY | DETUNE | LINE 2 | Casio CZ style phase distortion: eight waves (SAW, SQUARE, PULSE, DOUBLE SINE, SAW PULSE, three resonance waves), AMOUNT, an envelope on the amount (ENV AMT, ENV DECAY), a detuned second line (DETUNE, LINE 2). |
-| **WAVE** | BANK | POS X | POS Y | WARP TYPE | WARP AMOUNT | SCAN | Mutable Instruments Plaits' wavetable engine (4 banks of 8 x 8 waves): BANK, POS X, POS Y, a warp after it (FOLD, SHAPE, CRUSH, RING) and its amount, SCAN (an envelope that sweeps POS X). |
-| **CHIP** | WAVE | BITS | RATE | ARP | SPEED | SWEEP | Console chips: pulses (12, 25, 50 %), the NES's 4-bit triangle, a stepped saw, LFSR noise (long and metallic); BITS, sample RATE, a fast chord ARP (octave, major, minor, 7ths, sus 4, power) at its SPEED, a pitch SWEEP up or down. |
-| **MACRO** | SHAPE | TIMBRE | COLOR | TIMBRE ENV | COLOR ENV | ENV DECAY | Mutable Instruments Braids' macro oscillator: 44 shapes (Braids' list without its drums), TIMBRE and COLOR, each with an envelope (TIMBRE ENV, COLOR ENV, ENV DECAY). |
-| **WHEEL** | BASS | BODY | BRIGHT | PERC | CLICK | LESLIE | A tonewheel organ: drawbars grouped as BASS (16' 5 1/3'), BODY (8' 4'), BRIGHT (2 2/3' .. 1'), PERC (2nd or 3rd harmonic, normal or fast), key CLICK, LESLIE (off, slow up to the middle, fast above, with its depth). |
-| **VOICE** | VOWEL | FORMANT | BREATH | VIBRATO | RESO | TONE | A glottal pulse through three formants: VOWEL (A E I O U), FORMANT shift, BREATH, VIBRATO (it comes in after the attack), RESO (the formants' sharpness), TONE (the glottis's brightness). |
-| **PHYS** | MODEL | STRUCTURE | BRIGHT | DAMPING | EXCITER | STRENGTH | Mutable Instruments Plaits' physical models: MODEL (a string, or a modal body of resonators), STRUCTURE, BRIGHT, DAMPING, EXCITER (strike, or bowed / blown above the bottom), STRENGTH. |
-| **GRAIN** | SIZE | DENSITY | POSITION | SPRAY | PITCH SPREAD | TONE | A granular cloud of single-cycle waves: grain SIZE, DENSITY, POSITION through 16 waves, SPRAY (each grain's position drawn around it), PITCH SPREAD (octaves only at the top), TONE. |
-| **NOISE** | TYPE | COLOR | RESO | HARMONICS | DENSITY | GRIT | TYPE (white, pink, crackle, digital, dust), COLOR (dark to bright), RESO (resonators tuned to the note), HARMONICS (the 2nd and 3rd), DENSITY (crackle, digital, dust), GRIT (bits and rate). |
-| **LXR TONE** | WAVE | FM AMOUNT | FM FREQ | FM WAVE | FM ENV | DECIMATE | The LXR drum voice's oscillator, played on the keys: its WAVE, an FM modulator (FM AMT, FM FREQ, FM WAVE), FM ENV (the FM fading on each note), DECIMATE. |
-| **LXR METAL** | CHARACTER | SPREAD | FM AMOUNT | NOISE | BAND | RING | The LXR's hi-hat and cymbal: six square oscillators at metallic ratios, played on the keys: CHARACTER (hats, cymbal, bell, gong), SPREAD, FM AMT, NOISE, BAND (a band-pass above the note), RING. |
-| **BAZZ** | OSC MODE | WAVE POS | OCTAVE | SUB OCT | DRIFT | TONE | LXRXXL BAZZLINE's oscillator (VCO with the panel's SQR / SAW / TRI, FM, WAVE morph), with its range opened: WAVE POS, OCTAVE (-2..+2), SUB OCT (the sub one or two octaves down), DRIFT, TONE (BAZZLINE's tone filter). |
-
-A stepped slider (ALGO, SHAPE, WAVE, MODEL...) picks its option along its travel: the display and the readout show
-the option.
-
-FM LVL works on every voice: the voice's tone goes through a short delay line swung by a sine at FM RATIO of the
-note. Delaying a tone by `(I / 2πf)(1 - sin(2π r f t))` moves each of its harmonics by `k I sin(...)`: exactly a phase
-modulation of the tone's own phase (index I, ratio r). BAZZ does it inside its oscillator, as BAZZLINE did.
-
-## Automation and Q-Links
-
-The knobs and sliders of PANEL and MODULES are the **selected track's** (as on BAZZLINE): MPC records automation on
-the parameter (CUTOFF, VOICE CTRL 3...), and it plays back on the track that is selected. The six voice sliders are the
-parameters VOICE CTRL 1-6: what they move is the voice's (V3 is MOD INDEX on FM6, POSITION on GRAIN). Pick the voice
-before automating its sliders. TIMBRE and MORPH move the voice's slider behind them, so their automation follows the
-voice. The parameters added in 0.2.0 (TIMBRE, MORPH, SUSTAIN) come after the others, so 0.1.0 projects' automation
-stays where it was.
-
-The Q-Link order is in **`qlinks.json`** (the Q-Link Map's format). Each Q-Link page is 8 knobs, one Force knob bank:
-
-| Page | Q-Link page | Knobs 1-8 |
-|---|---|---|
-| PANEL | **PANEL 1** | STEP RND AMT, DRY/WET, DELAY TIME, SELECT/GATE, BACK/NOTE, DUCK RELEASE, GATE/DUCK, SOUND RND AMT |
-| PANEL | **PANEL 2** | DRIVE, TIMBRE, MORPH, VCF ENV, RESONANCE, CUTOFF, FILTER, WAVE |
-| PANEL | **PANEL 3** | ATTACK, DECAY, SUSTAIN, RELEASE, MOD RATE, MOD DEPTH, SUB LVL |
-| MODULES | **MODULES 1** | the six voice sliders, DRIVE POS, CURVE |
-| MODULES | **MODULES 2** | ATTACK, DECAY, SUSTAIN, RELEASE, VCF ATK, VCF DEC, PITCH AMT, PITCH DEC |
-| MODULES | **MODULES 3** | FILTER MODEL, KEY TRACK, ACCENT, SLIDE TIME, SWEEP, FM RATIO, TRACK, VOICE |
-| MODULES | **MODULES 4** | SWARM MODE, SWARM RATE, DETUNE, SWARM MIX, MOD WAVE, MOD DEST, MOD SYNC, FM LVL |
-| MODULES | **MODULES 5** | NOISE LVL |
-| FX MIXER | **FX 1 - FX 5** | as on BAZZLINE: the delay; the gate/duck and MASTER; LEVEL 1-8; PAN 1-8; DLY SEND 1-8 |
-
-### Presets: saving and loading
-
-Four keys and a slot number on **FX MIXER**, top middle: **SLOT**, **SOUND**, **PERF**, **SAVE**, **LOAD**. The
-big readout under them tells you what is happening at every step.
-
-- **A SOUND** is one track's voice: its VOICE, every knob, slider and selector of PANEL and MODULES for that track,
-  its LEVEL and PAN included, and every voice's whole sound as that track left it (not its steps, not its DLY
-  SEND, MUTE or SOLO). 0.1.0's sound files load as they were. It is saved from, and loaded onto, the **selected track**.
-- **A PERF** (performance) is everything: the eight sounds, the 64 patterns, the delay, the gate/duck, the mixer
-  (levels, pans, sends, mutes, solos, master), the links and the tempo.
-- **64 slots** of each. The slot number is the **SLOT** display: turn it with the data wheel or a Q-Link (it is
-  on the FX Q-Link page), or drag it up or down.
-
-**To save a sound:**
-1. Select the track (TRACK 1-8 on PANEL, or TRACK on MODULES).
-2. On FX MIXER, tap **SOUND** (it lights).
-3. Pick a **SLOT**. The readout says `SOUND 05   EMPTY   (T1)`, or `SOUND 05   (T1)` when the slot is used (T1: the
-   selected track).
-4. Tap **SAVE**. The readout asks `SAVE T1 AS SOUND 05?  TAP SAVE AGAIN` (or `OVERWRITE SOUND 05 ...` when the slot
-   is used) and SAVE blinks.
-5. Tap **SAVE** again within 6 seconds: `SAVED T1 AS SOUND 05`. Anything else (another slot, SOUND/PERF, waiting)
-   cancels.
-
-**To load a sound:** select the track, tap **SOUND**, pick the **SLOT**, tap **LOAD**: `LOADED SOUND 05 ON T1`. It
-loads at once, so you can step through the slots and tap LOAD on each to audition them. An empty slot says `EMPTY`
-and changes nothing.
-
-**To save a performance:** tap **PERF**, pick the **SLOT**, tap **SAVE**, then **SAVE** again (as for a sound).
-
-**To load a performance:** tap **PERF**, pick the **SLOT**, tap **LOAD**: the readout warns
-`LOAD PERF 05?  IT REPLACES EVERYTHING.  TAP LOAD AGAIN`; tap **LOAD** again. Save first anything you want to keep.
-
-**Where the files are:** on the device, in `/sdcard/LXRXXL ZYNTH/` (outside the plugin's folder, so updating or
-reinstalling the plugin keeps them):
-- `Sounds/SOUND 01.zysound` .. `SOUND 64.zysound`: plain text, one `key=value` line per control;
-- `Performances/PERF 01.zyperf` .. `PERF 64.zyperf`: the same text MPC's own project keeps for the instance.
-
-You can copy, back up or share these files (over SSH, or with the SD card / drive in a computer) and drop them into
-another device's folder: they appear in the slot their number says. Rename a file to move it to another slot. If
-`/sdcard/LXRXXL ZYNTH` cannot be written, the plugin uses `LXRXXL ZYNTH Data` inside its own folder instead.
-
-MPC's own project still saves and restores the whole instance as before: presets are for moving sounds and
-performances between projects and devices.
-
-### Playing it
-
-- **MPC's play** plays the pattern on MPC's grid; **PLAY** on the panel plays it with MPC stopped.
-- **Notes from the track** play the **selected track** (MIDI channel 1), or track 2-8 on channels 2-8. A note held
-  over another slides to it. With **REC** on, notes are written into the selected track with their velocity (112 or
-  more: an accent).
-- **The factory project:** one voice per track: 1 ACID (BAZZ), 2 E.PIANO (FM6), 3 PAD (WAVE), 4 PLUCK (PHYS),
-  5 ORGAN (WHEEL), 6 CLOUD (GRAIN), 7 ARP (CHIP), 8 BELL (LXR METAL); six demo patterns: A1 everything together, A2
-  the pad with plucks and the cloud, A3 the organ with the acid, A4 the plucks and the piano, A5 the chip and the
-  bells, A6 the cloud and the pad.
+The [user guide](docs/USER_GUIDE.md) explains the rest.
 
 ## How the voices were made
 
@@ -267,7 +66,7 @@ The full map is in **[docs/VOICE_MAP.md](docs/VOICE_MAP.md)**. In short:
 
 | Where from | Voices |
 |---|---|
-| Written here, for LXRXXL ZYNTH | ANALOG, TRIO, FM6 (operators; the DX7's algorithm table from Google's music-synthesizer-for-android, Apache 2.0), FM4, PHASE, CHIP, WHEEL, VOICE, GRAIN, NOISE |
+| Written here, for LXRXXL ZYNTH | ANALOG, TRIO, FM6 (operators; the DX7's algorithm table from Google's music-synthesizer-for-android, Apache 2.0), FM4, PHASE, CHIP, WHEEL, VOICE, GRAIN, NOISE, DRONE, TEXTURE, FX; CHAOS and SHIFT |
 | The LXR (LXR02Open's tables) | LXR TONE, LXR METAL, BAZZ (LXRXXL BAZZLINE's oscillator) |
 | Mutable Instruments (MIT, `third_party/mutable`) | MACRO (Braids), WAVE (Plaits' wavetable engine), PHYS (Plaits' string and modal voices) |
 
@@ -318,32 +117,38 @@ The tools:
 - `tools/panel.py`: where every control of the artwork sits, and the Q-Link pages from `qlinks.json`. It writes `layout.conf`.
 - `tools/zynth_art.py`: ZYNTH's artwork from BAZZLINE's (`art/bazzline/`): the vein texture (`art/texture/`), the ice
   accent, the ZYNTH logo (writes `art/panel/`).
-- `tools/panel_art.py`: builds the three pages from the artwork (`art/panel/`), with the voice selector and the label
-  windows (each voice's labels, read from `src/engines.c`).
+- `tools/voices.py`: the voices, their twenty controls and their starter sounds (writes `src/voice_defs.h` and
+  `src/starter_defs.h`).
+- `tools/panel_art.py`: builds the four pages from the artwork (`art/panel/`), with the voice selector and the label
+  windows (each voice's labels, from `tools/voices.py`).
 - `tools/preview.py`: draws a page with chosen values.
 
 ## Testing
 
 Offline, every build (`test/run_tests.sh`, and in CI):
-- **Every voice on its own** (`test/eng_test.c`): each of the sixteen at its defaults plays in tune (its partials on
-  the note), at a sensible level, with no NaN; 400 random settings and notes never blow up. Also built for ARM and
-  run under qemu: the same results.
+- **Every voice on its own** (`test/eng_test.c`): each of the nineteen at its defaults plays in tune (its partials on
+  the note), at a sensible level, with no NaN; each deeper control changes the sound; 400 random settings and notes
+  never blow up. Also built for ARM and run under qemu: the same results.
 - **The framework's host test:** two instances, names, set/get, option stepping, notes into audio, the chunk.
 - **The engine tests:** the six demo patterns play on MPC's transport; 20 000 random edits to every key and parameter;
-  the state round-trip; a 0.1.0 project loaded; every voice played by MIDI; VOICE, the six sliders, each voice's whole
-  sound and its home sound, VOICE RESET; TIMBRE and MORPH; VOICE < >; SOUND RANDOM (one track, every track, its
-  limits at a low amount) and STEP RANDOM (one track, the setup's keys, every track, every note in the key, the
-  velocities, 50 presses giving 50 different lines); MIDI notes and the duck; the delay; the mixer; presets.
+  the state round-trip; a 0.1.0 project loaded (sounds, sliders, SUSTAIN from VCA ENV, the duck off); every voice
+  played by MIDI; all 152 starter sounds play at a sensible level; VOICE, each voice's whole sound and its home
+  sound, VOICE RESET; TIMBRE and MORPH; VOICE < >; SOUND RANDOM (one track, every track, its limits at a low amount)
+  and STEP RANDOM (one track, the setup's keys, every track, every note in the key, the velocities, 50 presses giving
+  50 different lines); CHAOS (each track its own motion, every destination, the per-track amount); SHIFT (a 1 kHz tone
+  set to +250 Hz comes out at 1250 Hz, the other side about 56 dB down; RING with feedback stays bounded); MIDI notes;
+  the delay; the mixer; presets.
 - **The MPC simulation** (through the VST2 wrapper only, also built for ARM and run under qemu): MPC's play and the
-  panel's PLAY, the display, TRACK, the VOICE selector (its keys, the data wheel and a Q-Link), FM6 played, the
-  readout, the encoders, SHIFT functions, the duck, the project saved and loaded, RESET.
+  panel's PLAY, the display, TRACK, the VOICE selector (its keys, the data wheel and a Q-Link), CHAOS DEST stepped,
+  SHIFT MIX, FM6 played, the readout, the encoders, SHIFT functions, the project saved and loaded, RESET.
 
 On a device: 0.1.0 on an Akai Force, MPC OS 3.9.1 (`tested.json`); 0.2.0 not yet.
 
-Worst case offline (all eight tracks on the heaviest voices with UNISON, FM, sub and noise, plus the delay and the
-duck): about 150 µs per 128-frame block on an x86 core (LXRXXL BAZZLINE's worst case was about 140 µs). The audio
-runs with flush-to-zero on (denormals made the physical models five times slower). The device check
-(`mpc-vst-plugins tools/bench.sh`, budget 2902 µs) is still to do.
+Worst case offline (all eight tracks on heavy voices (MACRO, PHYS, FM6, GRAIN, DRONE, WAVE, TEXTURE, TRIO) with
+their deeper controls up, UNISON, FM, sub and noise, plus the delay, CHAOS and SHIFT): about 150-220 µs per 128-frame
+block on an x86 core (0.1.0: about 150 µs). The device's budget is 2902 µs per block; the device check
+(`mpc-vst-plugins tools/bench.sh`) is still to do, so on the Force start a heavy project with a few tracks and add
+from there. The audio runs with flush-to-zero on (denormals made the physical models five times slower).
 
 ## Credits and license
 
@@ -353,9 +158,11 @@ runs with flush-to-zero on (denormals made the physical models five times slower
   Open-Source license.
 - **Braids, Plaits, stmlib:** Emilie Gillet (Mutable Instruments), MIT.
 - **The DX7 algorithm table:** music-synthesizer-for-android, Copyright 2012 Google Inc., Apache 2.0.
-- **The sequencer, the voice chain, the delay, the gate/duck, the mixer, the presets:** from LXRXXL BAZZLINE and LXRXXL.
+- **The sequencer, the voice chain, the delay, the mixer, the presets:** from LXRXXL BAZZLINE and LXRXXL.
+- **SHIFT's Hilbert transformer:** Olli Niemitalo's all-pass coefficients (public).
 - **VST2 wrapper, skin builder and installer:** sd88me, [mpc-vst-plugins](https://github.com/sd88me/mpc-vst-plugins) (MIT).
 - **Fonts:** DSEG14 Classic by keshikan; Michroma by Vernon Adams (SIL Open Font License 1.1).
 
-LXRXXL ZYNTH is not affiliated with or endorsed by Erica Synths, Sonic Potions, Mutable Instruments, M-VAVE, Dirtywave
-or Akai Professional.
+LXRXXL ZYNTH is not affiliated with or endorsed by Erica Synths, Sonic Potions, Mutable Instruments, M-VAVE, Dirtywave,
+Yamaha, Casio, Moog, Hammond, Nintendo or Akai Professional. Their names only say which instruments a voice was coded
+after; all trademarks are their owners'.
