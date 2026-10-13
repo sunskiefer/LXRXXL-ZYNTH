@@ -99,7 +99,7 @@
     }
    ]
   },
-  "modules": {
+  "voice": {
    "knobs": [
     {
      "n": 1,
@@ -127,35 +127,35 @@
     },
     {
      "n": 7,
-     "key": "drive_pos"
+     "key": "voice"
     },
     {
      "n": 8,
-     "key": "curve"
+     "key": "track"
     },
     {
      "n": 9,
-     "key": "vca_atk"
+     "key": "v7"
     },
     {
      "n": 10,
-     "key": "vca_env"
+     "key": "v8"
     },
     {
      "n": 11,
-     "key": "sustain"
+     "key": "v9"
     },
     {
      "n": 12,
-     "key": "vca_rel"
+     "key": "v10"
     },
     {
      "n": 13,
-     "key": "vcf_atk"
+     "key": "v11"
     },
     {
      "n": 14,
-     "key": "vcf_dec"
+     "key": "v12"
     },
     {
      "n": 15,
@@ -167,35 +167,180 @@
     },
     {
      "n": 17,
-     "key": "fmodel"
+     "key": "v13"
     },
     {
      "n": 18,
-     "key": "keytrack"
+     "key": "v14"
     },
     {
      "n": 19,
-     "key": "acc_amt"
+     "key": "v15"
     },
     {
      "n": 20,
-     "key": "slide_time"
+     "key": "v16"
     },
     {
      "n": 21,
-     "key": "acc_sweep"
+     "key": "v17"
     },
     {
      "n": 22,
-     "key": "fm_ratio"
+     "key": "v18"
     },
     {
      "n": 23,
-     "key": "track"
+     "key": "v19"
     },
     {
      "n": 24,
-     "key": "voice"
+     "key": "v20"
+    },
+    {
+     "n": 25,
+     "key": "vca_atk"
+    },
+    {
+     "n": 26,
+     "key": "vca_env"
+    },
+    {
+     "n": 27,
+     "key": "sustain"
+    },
+    {
+     "n": 28,
+     "key": "vca_rel"
+    },
+    {
+     "n": 29,
+     "key": "vcf_atk"
+    },
+    {
+     "n": 30,
+     "key": "vcf_dec"
+    },
+    {
+     "n": 31,
+     "key": "vcf_sus"
+    },
+    {
+     "n": 32,
+     "key": "vcf_rel"
+    },
+    {
+     "n": 33,
+     "key": "acc_amt"
+    },
+    {
+     "n": 34,
+     "key": "acc_sweep"
+    },
+    {
+     "n": 35,
+     "key": "slide_time"
+    },
+    {
+     "n": 36,
+     "key": "fm_ratio"
+    },
+    {
+     "n": 37,
+     "key": "fm_lvl"
+    }
+   ]
+  },
+  "fxmod": {
+   "knobs": [
+    {
+     "n": 1,
+     "key": "dly_time"
+    },
+    {
+     "n": 2,
+     "key": "dly_in"
+    },
+    {
+     "n": 3,
+     "key": "dly_fb"
+    },
+    {
+     "n": 4,
+     "key": "dly_wet"
+    },
+    {
+     "n": 5,
+     "key": "dly_mode"
+    },
+    {
+     "n": 6
+    },
+    {
+     "n": 7
+    },
+    {
+     "n": 8
+    },
+    {
+     "n": 9,
+     "key": "gd_depth"
+    },
+    {
+     "n": 10,
+     "key": "gd_hold"
+    },
+    {
+     "n": 11,
+     "key": "gd_atk"
+    },
+    {
+     "n": 12,
+     "key": "gd_rel"
+    },
+    {
+     "n": 13,
+     "key": "gd_mode"
+    },
+    {
+     "n": 14,
+     "key": "gd_ch"
+    },
+    {
+     "n": 15,
+     "key": "pr_slot"
+    },
+    {
+     "n": 16
+    },
+    {
+     "n": 17,
+     "key": "drive_pos"
+    },
+    {
+     "n": 18,
+     "key": "curve"
+    },
+    {
+     "n": 19,
+     "key": "fmodel"
+    },
+    {
+     "n": 20,
+     "key": "keytrack"
+    },
+    {
+     "n": 21,
+     "key": "noise_lvl"
+    },
+    {
+     "n": 22
+    },
+    {
+     "n": 23
+    },
+    {
+     "n": 24
     },
     {
      "n": 25,
@@ -224,299 +369,110 @@
     {
      "n": 31,
      "key": "mod_sync"
-    },
-    {
-     "n": 32,
-     "key": "fm_lvl"
-    },
-    {
-     "n": 33,
-     "key": "noise_lvl"
     }
    ]
   },
-  "fx": {
-   "name": "FX MIXER",
+  "mixer": {
    "knobs": [
     {
      "n": 1,
-     "qlinkPage": 1,
-     "knob": 1,
-     "key": "dly_time",
-     "name": "DELAY TIME"
+     "key": "mix_lvl1"
     },
     {
      "n": 2,
-     "qlinkPage": 1,
-     "knob": 2,
-     "key": "dly_in",
-     "name": "DELAY IN LVL"
+     "key": "mix_lvl2"
     },
     {
      "n": 3,
-     "qlinkPage": 1,
-     "knob": 3,
-     "key": "dly_fb",
-     "name": "FEEDBACK"
+     "key": "mix_lvl3"
     },
     {
      "n": 4,
-     "qlinkPage": 1,
-     "knob": 4,
-     "key": "dly_wet",
-     "name": "DRY/WET"
+     "key": "mix_lvl4"
     },
     {
      "n": 5,
-     "qlinkPage": 1,
-     "knob": 5,
-     "key": "dly_mode",
-     "name": "DELAY MODE"
+     "key": "mix_lvl5"
     },
     {
      "n": 6,
-     "qlinkPage": 1,
-     "knob": 6,
-     "key": null,
-     "name": null
+     "key": "mix_lvl6"
     },
     {
      "n": 7,
-     "qlinkPage": 1,
-     "knob": 7,
-     "key": null,
-     "name": null
+     "key": "mix_lvl7"
     },
     {
      "n": 8,
-     "qlinkPage": 1,
-     "knob": 8,
-     "key": null,
-     "name": null
+     "key": "mix_lvl8"
     },
     {
      "n": 9,
-     "qlinkPage": 2,
-     "knob": 1,
-     "key": "gd_depth",
-     "name": "DEPTH"
+     "key": "mix_pan1"
     },
     {
      "n": 10,
-     "qlinkPage": 2,
-     "knob": 2,
-     "key": "gd_hold",
-     "name": "HOLD"
+     "key": "mix_pan2"
     },
     {
      "n": 11,
-     "qlinkPage": 2,
-     "knob": 3,
-     "key": "gd_atk",
-     "name": "ATTACK"
+     "key": "mix_pan3"
     },
     {
      "n": 12,
-     "qlinkPage": 2,
-     "knob": 4,
-     "key": "gd_rel",
-     "name": "RELEASE"
+     "key": "mix_pan4"
     },
     {
      "n": 13,
-     "qlinkPage": 2,
-     "knob": 5,
-     "key": "gd_mode",
-     "name": "GATE/DUCK"
+     "key": "mix_pan5"
     },
     {
      "n": 14,
-     "qlinkPage": 2,
-     "knob": 6,
-     "key": null,
-     "name": null
+     "key": "mix_pan6"
     },
     {
      "n": 15,
-     "qlinkPage": 2,
-     "knob": 7,
-     "key": "mix_master",
-     "name": "MASTER"
+     "key": "mix_pan7"
     },
     {
      "n": 16,
-     "qlinkPage": 2,
-     "knob": 8,
-     "key": null,
-     "name": null
+     "key": "mix_pan8"
     },
     {
      "n": 17,
-     "qlinkPage": 3,
-     "knob": 1,
-     "key": "mix_lvl1",
-     "name": "LEVEL 1"
+     "key": "mix_snd1"
     },
     {
      "n": 18,
-     "qlinkPage": 3,
-     "knob": 2,
-     "key": "mix_lvl2",
-     "name": "LEVEL 2"
+     "key": "mix_snd2"
     },
     {
      "n": 19,
-     "qlinkPage": 3,
-     "knob": 3,
-     "key": "mix_lvl3",
-     "name": "LEVEL 3"
+     "key": "mix_snd3"
     },
     {
      "n": 20,
-     "qlinkPage": 3,
-     "knob": 4,
-     "key": "mix_lvl4",
-     "name": "LEVEL 4"
+     "key": "mix_snd4"
     },
     {
      "n": 21,
-     "qlinkPage": 3,
-     "knob": 5,
-     "key": "mix_lvl5",
-     "name": "LEVEL 5"
+     "key": "mix_snd5"
     },
     {
      "n": 22,
-     "qlinkPage": 3,
-     "knob": 6,
-     "key": "mix_lvl6",
-     "name": "LEVEL 6"
+     "key": "mix_snd6"
     },
     {
      "n": 23,
-     "qlinkPage": 3,
-     "knob": 7,
-     "key": "mix_lvl7",
-     "name": "LEVEL 7"
+     "key": "mix_snd7"
     },
     {
      "n": 24,
-     "qlinkPage": 3,
-     "knob": 8,
-     "key": "mix_lvl8",
-     "name": "LEVEL 8"
+     "key": "mix_snd8"
     },
     {
      "n": 25,
-     "qlinkPage": 4,
-     "knob": 1,
-     "key": "mix_pan1",
-     "name": "PAN 1"
-    },
-    {
-     "n": 26,
-     "qlinkPage": 4,
-     "knob": 2,
-     "key": "mix_pan2",
-     "name": "PAN 2"
-    },
-    {
-     "n": 27,
-     "qlinkPage": 4,
-     "knob": 3,
-     "key": "mix_pan3",
-     "name": "PAN 3"
-    },
-    {
-     "n": 28,
-     "qlinkPage": 4,
-     "knob": 4,
-     "key": "mix_pan4",
-     "name": "PAN 4"
-    },
-    {
-     "n": 29,
-     "qlinkPage": 4,
-     "knob": 5,
-     "key": "mix_pan5",
-     "name": "PAN 5"
-    },
-    {
-     "n": 30,
-     "qlinkPage": 4,
-     "knob": 6,
-     "key": "mix_pan6",
-     "name": "PAN 6"
-    },
-    {
-     "n": 31,
-     "qlinkPage": 4,
-     "knob": 7,
-     "key": "mix_pan7",
-     "name": "PAN 7"
-    },
-    {
-     "n": 32,
-     "qlinkPage": 4,
-     "knob": 8,
-     "key": "mix_pan8",
-     "name": "PAN 8"
-    },
-    {
-     "n": 33,
-     "qlinkPage": 5,
-     "knob": 1,
-     "key": "mix_snd1",
-     "name": "DLY SEND 1"
-    },
-    {
-     "n": 34,
-     "qlinkPage": 5,
-     "knob": 2,
-     "key": "mix_snd2",
-     "name": "DLY SEND 2"
-    },
-    {
-     "n": 35,
-     "qlinkPage": 5,
-     "knob": 3,
-     "key": "mix_snd3",
-     "name": "DLY SEND 3"
-    },
-    {
-     "n": 36,
-     "qlinkPage": 5,
-     "knob": 4,
-     "key": "mix_snd4",
-     "name": "DLY SEND 4"
-    },
-    {
-     "n": 37,
-     "qlinkPage": 5,
-     "knob": 5,
-     "key": "mix_snd5",
-     "name": "DLY SEND 5"
-    },
-    {
-     "n": 38,
-     "qlinkPage": 5,
-     "knob": 6,
-     "key": "mix_snd6",
-     "name": "DLY SEND 6"
-    },
-    {
-     "n": 39,
-     "qlinkPage": 5,
-     "knob": 7,
-     "key": "mix_snd7",
-     "name": "DLY SEND 7"
-    },
-    {
-     "n": 40,
-     "qlinkPage": 5,
-     "knob": 8,
-     "key": "mix_snd8",
-     "name": "DLY SEND 8"
+     "key": "mix_master"
     }
    ]
   }

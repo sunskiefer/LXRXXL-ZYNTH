@@ -108,7 +108,7 @@ static void sound_text(Bl *x, int sp, char *buf)
     const Sound *s = &x->p.snd[x->ui.track];
     const float v = s->v[sp];
     if (sp == SP_VOICE) { snprintf(buf, 8, "%s", ENG_DEFS[voice_of(s)].shortName); return; }
-    if (sp >= SP_V1 && sp <= SP_V6) { eng_value_text(voice_of(s), sp - SP_V1, v, buf, 8, 0); return; }
+    if (sp >= SP_V1 && sp <= SP_V20) { eng_value_text(voice_of(s), sp - SP_V1, v, buf, 8, 0); return; }
     if (sp == SP_VCA_REL) { time_text(voice_relSeconds(v), buf, 0); return; }
     if (SOUND_DEFS[sp].nopts) { short_label(SOUND_DEFS[sp].opts[(int)v], buf); return; }
     switch (sp) {
@@ -149,7 +149,7 @@ static void full_text(Bl *x, int kind, int id, char *buf, int n)
         const Sound *s = &x->p.snd[x->ui.track];
         const float v = s->v[id];
         if (id == SP_VOICE) { snprintf(buf, (size_t)n, "%s", ENG_DEFS[voice_of(s)].name); return; }
-        if (id >= SP_V1 && id <= SP_V6) { eng_value_text(voice_of(s), id - SP_V1, v, buf, n, 1); return; }
+        if (id >= SP_V1 && id <= SP_V20) { eng_value_text(voice_of(s), id - SP_V1, v, buf, n, 1); return; }
         if (id == SP_VCA_REL) { time_text(voice_relSeconds(v), buf, 1); return; }
         if (SOUND_DEFS[id].nopts) { snprintf(buf, (size_t)n, "%s", SOUND_DEFS[id].opts[(int)v]); return; }
         sound_text(x, id, b);
@@ -201,7 +201,7 @@ void ui_readout(Bl *x, char *buf, int n)
             else if (m->id == UI_SRND_AMT) snprintf(buf, (size_t)n, "STEP RANDOM AMOUNT   %d %%", x->rnd2.seqAmt * 10);
             else if (m->id == UI_TIMBRE || m->id == UI_MORPH) {
                 const Sound *s = &x->p.snd[x->ui.track];
-                const int ty = voice_of(s), k = ENG_MACROS[ty][m->id == UI_MORPH];
+                const int ty = voice_of(s), k = ENG_DEFS[ty].macro[m->id == UI_MORPH];
                 char v2[48];
                 eng_value_text(ty, k, s->v[SP_V1 + k], v2, sizeof v2, 1);
                 snprintf(buf, (size_t)n, "T%d   %s %s: %s   %s", x->ui.track + 1, ENG_DEFS[ty].name,
@@ -211,7 +211,7 @@ void ui_readout(Bl *x, char *buf, int n)
             return;
         }
         full_text(x, m->kind, m->id, v, sizeof v);
-        if (m->kind == PK_SOUND && m->id >= SP_V1 && m->id <= SP_V6) {
+        if (m->kind == PK_SOUND && m->id >= SP_V1 && m->id <= SP_V20) {
             const int ty = voice_of(&x->p.snd[x->ui.track]);
             snprintf(nm, sizeof nm, "T%d   %s %s", x->ui.track + 1, ENG_DEFS[ty].name, ENG_DEFS[ty].slider[m->id - SP_V1]);
         } else if (m->kind == PK_SOUND) snprintf(nm, sizeof nm, "T%d   %s", x->ui.track + 1, SOUND_DEFS[m->id].name);
@@ -563,12 +563,26 @@ void ui_press(Bl *x, int b)
         } else {             /* VOICE RESET: the selected track's sound back to the default (its voice kept) */
             Sound *snd = &x->p.snd[x->ui.track];
             sound_resetVoice(snd, voice_of(snd));   /* the voice's home sound (LEVEL and PAN kept) */
+            x->p.starter[x->ui.track][voice_of(snd)] = 0;
             ui_message(x, "INI", 0, 1000);
             snprintf(x->pr.msg, sizeof x->pr.msg, "T%d   VOICE RESET", x->ui.track + 1);
         }
         x->touched = TOUCH_PRESET;   /* the readout shows what happened */
         flash(x, B_V_RESET);
         break;
+    case B_SND_PREV: case B_SND_NEXT: {   /* VOICE: the voice's starter sounds, one step either way (round) */
+        Sound *snd = &x->p.snd[x->ui.track];
+        const int ty = voice_of(snd);
+        uint8_t *si = &x->p.starter[x->ui.track][ty];
+        *si = (uint8_t)((*si + (b == B_SND_NEXT ? 1 : NUM_STARTER_SOUNDS - 1)) % NUM_STARTER_SOUNDS);
+        sound_starter(snd, ty, *si);
+        ui_message(x, "SND", 0, 800);
+        snprintf(x->pr.msg, sizeof x->pr.msg, "T%d   %s   SOUND %d / %d   %s", x->ui.track + 1, ENG_DEFS[ty].name, *si + 1,
+                 NUM_STARTER_SOUNDS, sound_starterName(ty, *si));
+        x->touched = TOUCH_PRESET;
+        flash(x, b);
+        break;
+    }
     case B_V_PREV: case B_V_NEXT: {   /* MODULES: the selected track's voice, one step either way (round) */
         Sound *snd = &x->p.snd[x->ui.track];
         const int ty = (voice_of(snd) + (b == B_V_NEXT ? 1 : NUM_ENGINES - 1)) % NUM_ENGINES;

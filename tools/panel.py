@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""LXRXXL ZYNTH's three pages: where every control of the artwork sits on MPC's plugin screen.
+"""LXRXXL ZYNTH's four pages: where every control of the artwork sits on MPC's plugin screen.
 
     python3 tools/panel.py --write     (writes layout.conf from this file)
     python3 tools/panel.py --check     (fails when layout.conf is stale)
@@ -7,10 +7,15 @@
 The pages are made from the artwork in art/panel/ by Suns Kiefer (1000 x 625 each), filling MPC's whole 1280 x 628
 plugin area:
     PANEL      front_bg.png stretched to the full screen (x 1.28, y 1.0048); the knobs stay round
-    MODULES    modules_bg.png's top (the sound modules, y 0..418) at 1.28, with a big readout under it: the control
-               last touched, its track and its value
-    FX MIXER   modules_bg.png's bottom (the delay and the gate/duck, y 395..625) at 1.28, a readout, and the mixer: eight
-               strips (PAN, DLY SEND, LEVEL, MUTE, SOLO) and MASTER, made from the artwork's slider boxes and caps
+    VOICE      (0.2.0) modules_bg.png's fader row (y 0..242) and below it the same faders again (its rows 32..245, at
+               y 242..455), at 1.28: the voice's twenty controls and the amp and filter ADSRs; the centre column the
+               ACCENT knobs above, the SOUND selector and the pitch envelope below; a readout at the bottom
+    FX MOD     (0.2.0) modules_bg.png's bottom (the delay and the gate/duck, y 395..625) over its sound modules (DRIVE,
+               FILTER, SWARM, MODULATOR: y 248..418), at 1.28, and a readout
+    MIXER      (0.2.0) the vein texture and eight strips (the track, PAN, DLY SEND, LEVEL, MUTE and SOLO the size of the
+               step keys) and MASTER
+The VOICE and FX MOD pictures are put together by tools/panel_art.py (compose()); positions on them are given here in
+their own pixels: fx(y) and mods(y) move the delay's (modules_bg.png y 395..) and the modules' (y 248..) there.
 Other pictures used: knob_big.png / knob_encoder.png (the knobs), btn_lit_*.png (a lit key), thumb_v.png / thumb_h.png
 (the slider and switch caps). The positions below are in the artwork's pixels; page() puts them on the screen.
 
@@ -27,22 +32,37 @@ Y0 = 86
 W, H = 1280, 628
 ART_W, ART_H = 1000, 625
 
-TABS = ["PANEL", "MODULES", "FX MIXER"]
+TABS = ["PANEL", "VOICE", "FX MOD", "MIXER"]
+
+
+def fx(y):
+    """modules_bg.png's delay / duck (y 395..625) -> the FX MOD picture's top"""
+    return y - 395
+
+
+def mods(y):
+    """modules_bg.png's sound modules (y 248..418) -> the FX MOD picture's bottom (from y 230)"""
+    return y - 248 + 230
+
+
+ROW2 = 242 - 32     # the VOICE page's second fader row: modules_bg.png's rows 32.. copied 210 px lower
 
 # ---------------------------------------------------------------- each page: which artwork, what part, at what scale
 # tab -> (picture, crop (x0, y0, x1, y1) in artwork pixels, sx, sy)
 PAGES = {
     0: ("front_bg.png", (0, 0, 1000, 625), W / ART_W, H / ART_H),
-    1: ("modules_bg.png", (0, 0, 1000, 418), 1.28, 1.28),
-    2: ("modules_bg.png", (0, 395, 1000, 625), 1.28, 1.28),
+    1: ("voice", (0, 0, 1000, 456), 1.28, 1.28),     # composed (panel_art.compose)
+    2: ("fxmod", (0, 0, 1000, 400), 1.28, 1.28),     # composed
+    3: ("mixer_bg.png", (0, 0, 1000, 491), 1.28, 1.28),
 }
-# the parts of a crop that belong to the other page: their printing wiped (the panel's finish filled in)
+# the parts of modules_bg.png that are wiped before the pages are put together (artwork pixels)
 MASKS = {
-    1: [(383, 395, 94, 20), (0, 414, 1000, 4)],                     # DRY/WET (the delay's), the delay's labels' tops
-    2: [(0, 395, 385, 24), (475, 395, 525, 24)],                    # the modules' last labels and slots above the delay
+    1: [],
+    2: [(383, 395, 94, 20)],
 }
-READOUT = {1: (0, 535, 1280, 93), 2: (0, 294, 1280, 44)}          # page px: the big readout strip
-MIXER_Y = 338                                                      # page px: the mixer (FX MIXER), 290 px tall
+VOICE_CENTRE = (380, 242, 168, 214)   # VOICE: the second row's centre column (its copy of the ACCENT knobs), cleared
+READOUT = {1: (0, 586, 1280, 42), 2: (0, 516, 1280, 108), 3: (0, 586, 1280, 42)}   # page px: the readout strip
+MIXER_Y = 4                                                        # page px: the mixer (MIXER)
 
 
 def scale(tab):
@@ -73,49 +93,58 @@ KNOBS = [
     (0, "gd_rel", 712, 142, 72, "big", 1),
     # LXRXXL's randomizer amounts (their own knobs; the scale is printed around them: MOD_ART)
     (0, "srnd_amt", 370.3, 151.3, 50, "mod_yellow", 1), (0, "rnd_amt", 637.5, 151.3, 50, "mod_green", 1),
-    # MODULES: FM RATIO and FM LVL (the FM pair, any voice), under SLIDE TIME; NOISE beside KEY TRACK
+    # VOICE: the ACCENT column (top), FM RATIO and FM LVL under SLIDE TIME; the pitch envelope under the SOUND selector
     (1, "fm_ratio", 432.0, 218.75, 40, "big", 1), (1, "fm_lvl", 497.7, 218.75, 40, "big", 1),
-    (1, "noise_lvl", 412, 374, 42, "big", 1),
     (1, "acc_amt", 419, 88, 52, "big", 1), (1, "acc_sweep", 419, 161, 52, "big", 1),
-    (1, "slide_time", 490, 125.5, 50, "big", 1), (1, "keytrack", 341, 382, 50, "big", 1),
-    (1, "sw_rate", 494, 354, 48, "big", 1), (1, "detune", 577, 371, 44, "big", 1),
-    (1, "sw_mix", 657, 356, 50, "big", 1),
-    (2, "dly_time", 145.5, 519.5, 130, "big", 0), (2, "dly_in", 272, 467, 50, "big", 1),
-    (2, "dly_fb", 344, 468, 50, "big", 1), (2, "dly_wet", 429, 452, 64, "big", 1),
-    (2, "gd_depth", 621, 518, 72, "big", 1), (2, "gd_hold", 722, 517, 72, "big", 1),
-    (2, "gd_atk", 818, 517, 72, "big", 1), (2, "gd_rel", 918, 517, 72, "big", 1),
+    (1, "slide_time", 490, 125.5, 50, "big", 1),
+    (1, "env_cv", 425, 375, 46, "big", 1), (1, "pitch_dec", 504, 375, 46, "big", 1),
+    # FX MOD: the sound modules' knobs (NOISE beside KEY TRACK) and the delay's and the duck's
+    (2, "noise_lvl", 412, mods(374), 42, "big", 1), (2, "keytrack", 341, mods(382), 50, "big", 1),
+    (2, "sw_rate", 494, mods(354), 48, "big", 1), (2, "detune", 577, mods(371), 44, "big", 1),
+    (2, "sw_mix", 657, mods(356), 50, "big", 1),
+    (2, "dly_time", 145.5, fx(519.5), 130, "big", 0), (2, "dly_in", 272, fx(467), 50, "big", 1),
+    (2, "dly_fb", 344, fx(468), 50, "big", 1), (2, "dly_wet", 429, fx(452), 64, "big", 1),
+    (2, "gd_depth", 621, fx(518), 72, "big", 1), (2, "gd_hold", 722, fx(517), 72, "big", 1),
+    (2, "gd_atk", 818, fx(517), 72, "big", 1), (2, "gd_rel", 918, fx(517), 72, "big", 1),
 ]
 KNOB_MAX = 126      # page px: a knob's 128-frame filmstrip stays under MPC's 16384 px (docs/NOTES.md, the framework's rule)
 
 # ---------------------------------------------------------------- sliders (MODULES): key -> channel (x, y0, y1)
 # the dark channel printed on the panel; the thumb runs along it, the top is the maximum (an option list: the first
 # option at the top)
-VSLIDERS = [("v1", 60, 48, 197), ("v2", 118, 48, 197), ("v3", 175, 48, 197),          # the voice's six sliders
-            ("v4", 246, 48, 197), ("v5", 305, 48, 197), ("v6", 360, 48, 197),
-            # 0.2.0: the synth's envelopes: the amp ADSR, the filter's attack and decay, the pitch envelope (LEVEL and
-            # PAN are the FX MIXER's)
-            ("vca_atk", 566, 44, 193), ("vca_env", 624, 44, 193), ("sustain", 681, 44, 193),
-            ("vca_rel", 738, 44, 193), ("vcf_atk", 797, 44, 193), ("vcf_dec", 854, 44, 193),
-            ("env_cv", 912, 44, 193), ("pitch_dec", 970, 44, 193)]
-# the six voice sliders' printed labels are under the label windows (LABEL_WINDOWS): nothing to reprint
+LEFT_X = [60, 118, 175, 246, 305, 360]                       # the six faders on the left
+RIGHT_X = [566, 624, 681, 738, 797, 854, 912, 970]           # the eight on the right
+VSLIDERS = ([("v%d" % (i + 1), x, 48, 197) for i, x in enumerate(LEFT_X)] +              # V1 .. V6
+            # the amp's and the filter's ADSR (the same on every voice)
+            [(k, x, 44, 193) for k, x in zip(["vca_atk", "vca_env", "sustain", "vca_rel",
+                                              "vcf_atk", "vcf_dec", "vcf_sus", "vcf_rel"], RIGHT_X)] +
+            # the second row: V7 .. V12 on the left, V13 .. V20 on the right
+            [("v%d" % (i + 7), x, 48 + ROW2, 197 + ROW2) for i, x in enumerate(LEFT_X)] +
+            [("v%d" % (i + 13), x, 44 + ROW2, 193 + ROW2) for i, x in enumerate(RIGHT_X)])
+# the voice's faders' printed labels are under the label windows: nothing to reprint
 RELABEL_WIPE = []
 RELABEL_WORDS = []
-# MODULES: the label windows over the six voice sliders' legends, page pixels; each shows the voice's names
-LABEL_WINDOWS = [(round(x * 1.28 - 33), 270, 66, 40) for _, x, _, _ in VSLIDERS[:6]]
+# VOICE: the label windows over the voice's twenty faders (V1..V20 in order), page pixels; each shows the voice's names
+LABEL_WINDOWS = ([(round(x * 1.28 - 33), 270, 66, 40) for x in LEFT_X] +
+                 [(round(x * 1.28 - 33), round(270 + ROW2 * 1.28), 66, 40) for x in LEFT_X] +
+                 [(round(x * 1.28 - 33), round(270 + ROW2 * 1.28), 66, 40) for x in RIGHT_X])
 # MODULES: what is wiped from the artwork (artwork pixels): the title MODULES (the VOICE selector's place) and the
 # OSC MODE slider's VCO / FM / WAVE legends
 MODULES_WIPE = [(30, 4, 150, 30), (0, 30, 48, 26), (0, 100, 40, 24), (0, 172, 46, 24)]
 # the option sliders under the selector bars: key -> channel (x0, y, x1); the first option at the left
-HSLIDERS = [("drive_pos", 86, 324.5, 151), ("curve", 74, 384, 169), ("fmodel", 310, 334.5, 375),
-            ("sw_mode", 546, 333.5, 611), ("mod_wave", 749, 321, 910), ("mod_dest", 754, 392, 915)]
+HSLIDERS = [("drive_pos", 86, mods(324.5), 151), ("curve", 74, mods(384), 169), ("fmodel", 310, mods(334.5), 375),
+            ("sw_mode", 546, mods(333.5), 611), ("mod_wave", 749, mods(321), 910), ("mod_dest", 754, mods(392), 915)]
 THUMB_V = (9, 17)       # the thumb on every slider (as in the mockups)
 THUMB_SW = (8, 16)      # the toggle switches' thumb
 
 # ---------------------------------------------------------------- selector bars (MODULES): key -> (x, y, w, h, n)
-BARS = [("drive_pos", 25, 290, 182, 18, 2), ("curve", 28, 345, 183, 19, 3), ("fmodel", 249, 290, 182, 18, 2),
-        ("sw_mode", 485, 289, 182, 18, 2), ("mod_wave", 721, 281, 213, 21, 5), ("mod_dest", 723, 354, 214, 21, 4)]
-LABEL_OPTS = [("mod_sync", [(941, 292, 39, 14), (938, 391, 47, 12)])]
-SYNC_SLOT = (961, 317, 381)       # x, y0, y1: the FREE / TEMPO switch
+BARS = [("drive_pos", 25, mods(290), 182, 18, 2), ("curve", 28, mods(345), 183, 19, 3),
+        ("fmodel", 249, mods(290), 182, 18, 2), ("sw_mode", 485, mods(289), 182, 18, 2),
+        ("mod_wave", 721, mods(281), 213, 21, 5), ("mod_dest", 723, mods(354), 214, 21, 4)]
+LABEL_OPTS = [("mod_sync", [(941, mods(292), 39, 14), (938, mods(391), 47, 12)])]
+SYNC_SLOT = (961, mods(317), mods(381))       # x, y0, y1: the FREE / TEMPO switch
+SYNC_ZONES = [(938, mods(285), 54, 64), (938, mods(349), 54, 60)]
+SYNC_CELLS = [(936, mods(290), 50, 18), (934, mods(388), 54, 16)]
 THUMB_SYNC = (17, 9)
 
 # ---------------------------------------------------------------- two- and three-way switches
@@ -125,8 +154,8 @@ SWITCHES = [
      [(430, 231, 66, 15), (430, 246, 66, 15), (430, 261, 66, 15)], "v"),
     (0, "fmode", [(526, 245), (526, 261)], [(514, 231, 52, 22), (514, 253, 52, 22)], "v"),
     (0, "gd_mode", [(849.5, 133.5), (903.5, 133.5)], [(764, 118, 112, 28), (876, 118, 112, 28)], "h"),
-    (2, "gd_mode", [(842.5, 450.5), (896.5, 450.5)], [(756, 436, 113, 26), (869, 436, 113, 26)], "h"),
-    (2, "dly_mode", [(292.5, 605.5), (346.5, 605.5)], [(218, 592, 102, 22), (320, 592, 122, 22)], "h"),
+    (2, "gd_mode", [(842.5, fx(450.5)), (896.5, fx(450.5))], [(756, fx(436), 113, 26), (869, fx(436), 113, 26)], "h"),
+    (2, "dly_mode", [(292.5, fx(605.5)), (346.5, fx(605.5))], [(218, fx(592), 102, 22), (320, fx(592), 122, 22)], "h"),
 ]
 
 # ---------------------------------------------------------------- keys: key -> (tab, cx, cy, diameter of the glass)
@@ -141,7 +170,7 @@ for i, x in enumerate([39, 101, 164, 225, 287, 350, 411, 472, 534, 595, 658, 719
     KEYS["s%d" % (i + 1)] = (0, x, 545, 57)
 for k, x, y in [("d_add", 270.5, 539.5), ("d_hold", 336.5, 540), ("d_rev", 410.5, 540), ("d_tap", 490.5, 539.5),
                 ("gd_on", 886.5, 600.5)]:
-    KEYS[k] = (2, x, y, 36)   # the coloured keys of the delay and the duck: printed lit, unlit made from them
+    KEYS[k] = (2, x, fx(y), 36)   # the coloured keys of the delay and the duck: printed lit, unlit made from them
 
 # VOICE RESET (SHIFT: MUTE ALL): Suns Kiefer's button on its bezel, PANEL, artwork pixels (centre)
 RESET_KEY = ("v_reset", 505, 175)                      # key centre (its touch area)
@@ -158,38 +187,47 @@ VOICE_SEL = (1, 98, 1, 168, 31)                          # MODULES: the VOICE se
 VOICE_LABEL = (24, 2, 76, 38)                            # page rect: its legend "VOICE"
 VOICE_KEYS = [("v_prev", 368, 21, 30), ("v_next", 422, 21, 30)]   # page: centre, size: VOICE < and VOICE >
 VOICE_KEY_TOUCH = (50, 42)                               # their touch area (page px), larger than the key
+# VOICE (0.2.0): the SOUND selector in the second row's centre: its legend, the name (MPC's text: the "snd_name"
+# parameter), < and > (page pixels)
+SOUND_LABEL = (497, 330, 194, 16)
+SOUND_NAME = (497, 348, 194, 40)
+SOUND_KEYS = [("snd_prev", 545, 414, 30), ("snd_next", 643, 414, 30)]
+# VOICE: the pitch envelope's legends under its knobs (page rect, text, cap)
+PITCH_LABELS = [((505, 510, 80, 14), "PITCH|AMT", 11), ((605, 510, 80, 14), "PITCH|DEC", 11)]
 # MODULES (0.2.0): the artwork's small legends reprinted bigger: (the printed word's ink box, artwork px), the word,
 # its new centre (artwork px; None: where it was), its cap height (page px). Their boxes are wiped (clean circuit).
+# The ink boxes are modules_bg.png's (wiped there); the centres are the page's own picture (VOICE: the same; FX MOD:
+# mods()). (tab, ink box, word, centre or None, cap)
 MODULES_REPRINT = [
-    ((90, 278, 144, 283), "POSITION", None, 12), ((35, 334, 65, 339), "CURVE", None, 12),
-    ((310, 278, 349, 283), "MODEL", None, 12), ((483, 278, 516, 283), "MODE", None, 12),
-    ((719, 267, 758, 273), "WAVE", None, 12), ((725, 341, 755, 346), "DEST", None, 12),
-    ((392, 119, 448, 125), "AMOUNT", None, 12), ((399, 191, 445, 197), "SWEEP", None, 12),
-    ((480, 387, 509, 392), "RATE", (494, 389), 12), ((645, 391, 666, 396), "MIX", (657, 391), 12),
-    ((556, 410, 601, 415), "SPREAD", (577, 402), 12),
+    (2, (90, 278, 144, 283), "POSITION", None, 12), (2, (35, 334, 65, 339), "CURVE", None, 12),
+    (2, (310, 278, 349, 283), "MODEL", None, 12), (2, (483, 278, 516, 283), "MODE", None, 12),
+    (2, (719, 267, 758, 273), "WAVE", None, 12), (2, (725, 341, 755, 346), "DEST", None, 12),
+    (1, (392, 119, 448, 125), "AMOUNT", None, 12), (1, (399, 191, 445, 197), "SWEEP", None, 12),
+    (2, (480, 387, 509, 392), "RATE", (494, 389), 12), (2, (645, 391, 666, 396), "MIX", (657, 391), 12),
+    (2, (556, 410, 601, 415), "SPREAD", (577, 402), 12),
     # the section headings, bigger again
-    ((91, 258, 138, 265), "DRIVE", None, 14), ((311, 258, 364, 265), "FILTER", None, 14),
-    ((484, 257, 547, 264), "SWARM", None, 14), ((720, 252, 840, 260), "MODULATOR", (774, 256), 14),
-    ((414, 41, 492, 49), "ACCENT", None, 14), ((878, 13, 991, 22), "AMP ENV", (652, 18), 14),
-    ((825, 18, 825, 18), "FILTER", None, 14), ((941, 18, 941, 18), "PITCH", None, 14),
+    (2, (91, 258, 138, 265), "DRIVE", None, 14), (2, (311, 258, 364, 265), "FILTER", None, 14),
+    (2, (484, 257, 547, 264), "SWARM", None, 14), (2, (720, 252, 840, 260), "MODULATOR", (774, 256), 14),
+    (1, (414, 41, 492, 49), "ACCENT", None, 14), (1, (878, 13, 991, 22), "AMP ENV", (652, 18), 14),
+    (1, (883, 18, 883, 18), "FILTER ENV", None, 14),
 ]
-# two-line legends reprinted the same way: (ink box), (line 1, line 2), centre, cap
-MODULES_REPRINT2 = [((270, 372, 307, 387), ("KEY", "TRACK"), (281, 380), 12),
-                    ((471, 155, 508, 169), ("SLIDE", "TIME"), (490, 162), 12)]
+# two-line legends reprinted the same way: (tab, ink box, (line 1, line 2), centre, cap)
+MODULES_REPRINT2 = [(2, (270, 372, 307, 387), ("KEY", "TRACK"), (281, 380), 12),
+                    (1, (471, 155, 508, 169), ("SLIDE", "TIME"), (490, 162), 12)]
 # the selector bars' and FREE / TEMPO's words: drawn in label-window style (BAR_TEXT px tall at most)
 BAR_TEXT = 14
 # MODULES: printed legends (page rect, text, px) of the controls ZYNTH adds
-MODULES_LABELS = [((513, 309, 80, 14), "FM RATIO", 11), ((597, 309, 80, 14), "FM LVL", 11),
-                  ((487, 511, 80, 14), "NOISE", 12)]
+MODULES_LABELS = [(1, (513, 309, 80, 14), "FM RATIO", 11), (1, (597, 309, 80, 14), "FM LVL", 11),
+                  (2, (487, round(mods(511 / 1.28) * 1.28), 80, 14), "NOISE", 12)]
 # PANEL: LXRXXL's randomizers beside the panic key (page pixels): each key's picture, centre and size; the scale
 # printed round each amount knob; the legend ("?" for STEP RANDOM, the warning sign for SOUND RANDOM)
 MOD_KEYS = [("srnd", "mod_key_yellow.png", 549, 176, 40), ("rnd", "mod_key_green.png", 744, 176, 40)]
 MOD_ART = [("mod_label_question.png", 549, 140, 14), ("mod_label_warning.png", 744, 138, 30)]   # (the amount knobs: the
 # white segmented ring of every other knob, not LXRXXL's coloured scales)
 # MODULES: the other sliders' legends in label windows like the voice's (fixed text, page pixels)
-FIXED_WINDOWS = [((round(x * 1.28 - 33), 270, 66, 40), t) for (_, x, _, _), t in
-                 zip(VSLIDERS[6:], ["ATTACK", "DECAY", "SUSTAIN", "RELEASE", "VCF|ATK", "VCF|DEC", "PITCH|AMT", "PITCH|DEC"])]
-CH_SEL = (2, 661, 585, 40, 34)                             # FX MIXER: the duck's MIDI channel
+FIXED_WINDOWS = [((round(x * 1.28 - 33), 270, 66, 40), t) for x, t in
+                 zip(RIGHT_X, ["ATTACK", "DECAY", "SUSTAIN", "RELEASE", "ATTACK", "DECAY", "SUSTAIN", "RELEASE"])]
+CH_SEL = (2, 661, fx(585), 40, 34)                         # FX MOD: the duck's MIDI channel
 
 # ---------------------------------------------------------------- presets (FX MIXER, page pixels)
 # the slot number (the display's font) with its label, and the four keys: glass centre, label centre
@@ -199,20 +237,21 @@ PRESET_KEYS = [("pr_sound", 753, 47, "SOUND", 753, 17), ("pr_perf", 817, 70, "PE
                ("pr_save", 873, 47, "SAVE", 873, 17), ("pr_load", 928, 70, "LOAD", 928, 40)]
 PRESET_GLASS = 34
 
-# ---------------------------------------------------------------- the mixer (FX MIXER, page pixels)
-STRIP_W = 134
-MIX_STRIPS = [8 + i * STRIP_W for i in range(8)]          # each strip's left edge
-MASTER_X = 8 + 8 * STRIP_W                                # the MASTER strip: to the right edge
+# ---------------------------------------------------------------- the mixer (MIXER, page pixels)
+STRIP_W = 141
+MIX_STRIPS = [6 + i * STRIP_W for i in range(8)]          # each strip's left edge
+MASTER_X = 6 + 8 * STRIP_W                                # the MASTER strip: to the right edge
 MIX = {   # inside a strip (x from its left edge, y from MIXER_Y)
-    "num": (6, 4, 40, 34),            # the track's number, in the display's font
-    "pan": (38, 88, 54),              # knob: cx, cy, size
-    "snd": (38, 172, 54),
-    "pan_label": (0, 42, 76, 14), "snd_label": (0, 126, 76, 14),
-    "fader": (80, 22, 44, 206),       # the slider box (the artwork's LEVEL box): x, y, w, h
-    "lvl_label": (70, 4, 64, 14),
-    "mute": (4, 232, 62, 54), "solo": (68, 232, 62, 54),
+    "num": (8, 6, 44, 38),            # the track's number, in the display's font
+    "pan": (44, 128, 72),             # knob: cx, cy, size
+    "snd": (44, 296, 72),
+    "pan_label": (0, 66, 88, 18), "snd_label": (0, 234, 88, 18),
+    "fader": (90, 40, 44, 424),       # the slider box (the artwork's LEVEL box): x, y, w, h
+    "lvl_label": (78, 12, 64, 18),
+    "mute": (4, 474, 66, 58), "solo": (72, 474, 66, 58),          # the step keys' size
+    "mute_label": (4, 536, 66, 18), "solo_label": (72, 536, 66, 18),
 }
-MIX_MASTER = {"label": (MASTER_X, 4, 1280 - MASTER_X - 8, 18), "fader": (MASTER_X + 68, 28, 56, 254)}
+MIX_MASTER = {"label": (MASTER_X, 10, 1280 - MASTER_X - 8, 26), "fader": (MASTER_X + 40, 44, 56, 510)}
 
 
 # ---------------------------------------------------------------- Q-Links: every parameter of a page, in reading order
@@ -229,14 +268,14 @@ def controls(tab):
     if tab == 1:
         for key, x, y0, y1 in VSLIDERS:
             out.append((key,) + page(tab, x, (y0 + y1) / 2))
-        for key, x, y, w, h, n in BARS:
-            out.append((key,) + page(tab, x + w / 2, y + h / 2))
-        out.append(("mod_sync",) + page(tab, SYNC_SLOT[0], (SYNC_SLOT[1] + SYNC_SLOT[2]) / 2))
         t, x, y, w, h = TRACK_SEL
         out.append(("track",) + page(tab, x + w / 2, y + h / 2))
         t, x, y, w, h = VOICE_SEL
         out.append(("voice",) + page(tab, x + w / 2, y + h / 2))
     if tab == 2:
+        for key, x, y, w, h, n in BARS:
+            out.append((key,) + page(tab, x + w / 2, y + h / 2))
+        out.append(("mod_sync",) + page(tab, SYNC_SLOT[0], (SYNC_SLOT[1] + SYNC_SLOT[2]) / 2))
         t, x, y, w, h = CH_SEL
         out.append(("gd_ch",) + page(tab, x + w / 2, y + h / 2))
         x, y, w, h = PRESET_SLOT
@@ -249,7 +288,7 @@ def controls(tab):
     return uniq
 
 
-ROW_GAP = {0: 48, 1: 110, 2: 48}   # page px: how far below a row's top a control still belongs to that row
+ROW_GAP = {0: 48, 1: 110, 2: 48, 3: 48}   # page px: how far below a row's top a control still belongs to that row
 
 
 def rows_of(items, row_gap):
@@ -267,16 +306,6 @@ def rows_of(items, row_gap):
         rows.append(cur)
     return [[c[0] for c in sorted(r, key=lambda c: (round(c[1]), c[2]))] for r in rows]
 
-
-# MODULES, as the artwork reads (its tall sliders and the ACCENT column make one row, then the selectors under them)
-MODULES_ROWS = [["voice", "track"],
-                ["v1", "v2", "v3", "v4", "v5", "v6", "acc_amt", "acc_sweep", "slide_time", "fm_ratio", "vca_rel",
-                 "vcf_atk", "vcf_dec", "vca_atk", "vca_env", "env_cv", "pitch_dec", "level", "pan"],
-                ["drive_pos", "curve", "fmodel", "keytrack", "sw_rate", "sw_mode", "detune", "sw_mix", "mod_wave", "mod_dest", "mod_sync"]]
-
-# FX MIXER's top: the delay's row (TIME's label is on it) then the duck's knobs, then the bottom switches
-FX_ROWS = [["dly_time", "dly_in", "dly_fb", "dly_wet", "pr_slot", "gd_mode"], ["gd_depth", "gd_hold", "gd_atk", "gd_rel"],
-           ["dly_mode", "gd_ch"]]
 
 
 def pack(rows, n=16):
@@ -297,13 +326,13 @@ def chunks(keys, n=8):
 
 
 QLINK_FILE = os.path.join(ROOT, "qlinks.json")   # the Q-Link order (the Q-Link Map's format)
-PAGE_IDS = ["panel", "modules", "fx"]
+PAGE_IDS = ["panel", "voice", "fxmod", "mixer"]
 
 
 def mapped_keys(tab):
     """the controls a tab can put on a knob"""
     keys = [c[0] for c in controls(tab)]
-    if tab == 2:
+    if tab == 3:
         keys += ["mix_%s%d" % (w, i) for w in ("lvl", "pan", "snd") for i in range(1, 9)] + ["mix_master"]
     return keys
 
@@ -331,7 +360,7 @@ def qlink_pages(tab):
 
 def qlink_names(tab):
     """each Q-Link page's short name in MPC's page strip"""
-    base = ["PANEL", "MODULES", "FX"][tab]
+    base = ["PANEL", "VOICE", "FX MOD", "MIXER"][tab]
     return ["%s %d" % (base, i + 1) for i in range(len(qlink_pages(tab)))]
 
 
@@ -339,7 +368,7 @@ def layout_lines():
     """layout.conf: each tab with a knob per Q-Link control (panel_art.py replaces every control) and its Q-Links"""
     L = ["# LXRXXL ZYNTH -- page layout (mpc-vst-plugins layout.conf syntax: tools/shadow_skin.py).",
          "# GENERATED by tools/panel.py: edit that, then run `python3 tools/panel.py --write`. tools/panel_art.py then",
-         "# builds every control of the three pages from the artwork (art/panel/).",
+         "# builds every control of the four pages from the artwork (art/panel/).",
          "theme_bg=0e0e0e", "theme_panel=0e0e0e", "theme_ink=ececec", "theme_ink_dim=cfcfcf", "theme_accent=7dcdf5",
          "theme_knob_ring=7dcdf5", "theme_seg_active=7dcdf5", ""]
     for t, name in enumerate(TABS):

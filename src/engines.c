@@ -1,4 +1,5 @@
-/* LXRXXL ZYNTH -- the voice list: names, the six sliders of each voice, their texts, and the dispatch to the engines. */
+/* LXRXXL ZYNTH -- the voice list (src/voice_defs.h, from tools/voices.py), the controls' texts, and the dispatch to
+ * the engines. */
 #include <stdio.h>
 #include <string.h>
 #include "eng_dsp.h"
@@ -20,79 +21,14 @@ void wheel_render(WheelSt *s, const EngIn *in, float *out, int n);
 void voice_fmt_render(VoiceSt *s, const EngIn *in, float *out, int n);
 void grain_render(GrainSt *s, const EngIn *in, float *out, int n);
 void noise_render(NoiseSt *s, const EngIn *in, float *out, int n);
+void drone_render(DroneSt *s, const EngIn *in, float *out, int n);
+void texture_render(TextureSt *s, const EngIn *in, float *out, int n);
+void fx_render_voice(FxSt *s, const EngIn *in, float *out, int n);
 void grain_tables_init(void);
 void bazz_tables_init(void);
 
-#define Z6 {0, 0, 0, 0, 0, 0}
 const EngDef ENG_DEFS[NUM_ENGINES] = {
-    [ENG_ANALOG] = {"ANALOG", "ANL", {"WAVE", "PULSE WIDTH", "DETUNE", "INTERVAL", "SYNC", "MIX"},
-                    {"WAVE", "PULSE|WIDTH", "DETUNE", "INTER|VAL", "SYNC", "MIX"},
-                    {0.f, 0.f, .12f, .5f / 9, 0.f, .5f}, 1, {0, 0, 0, 9, 0, 0}},
-    [ENG_TRIO] = {"TRIO", "TRI", {"WAVE", "OSC 2 INTERVAL", "OSC 3 INTERVAL", "DETUNE", "LEVEL 2", "LEVEL 3"},
-                  {"WAVE", "OSC 2|INT", "OSC 3|INT", "DETUNE", "LEVEL|2", "LEVEL|3"},
-                  {0.f, 19.5f / 25, 12.5f / 49, .25f, .75f, .6f}, 0, {0, 25, 49, 0, 0, 0}},
-    [ENG_FM6] = {"FM6", "FM6", {"ALGO", "RATIO", "MOD INDEX", "FEEDBACK", "DETUNE", "BRIGHT"},
-                 {"ALGO", "RATIO", "MOD|INDEX", "FEED|BACK", "DETUNE", "BRIGHT"},
-                 {4.5f / 32, 1.5f / 16, .35f, .2f, .15f, .4f}, 2, {32, 16, 0, 0, 0, 0}},
-    [ENG_FM4] = {"FM4", "FM4", {"ALGO", "RATIO B", "RATIO C", "MOD INDEX", "FEEDBACK", "DECAY"},
-                 {"ALGO", "RATIO|B", "RATIO|C", "MOD|INDEX", "FEED|BACK", "DECAY"},
-                 {.5f / 12, 3.5f / 20, 5.5f / 20, .4f, .1f, .5f}, 3, {12, 20, 20, 0, 0, 0}},
-    [ENG_PHASE] = {"PHASE", "PHS", {"WAVE", "AMOUNT", "ENV AMOUNT", "ENV DECAY", "DETUNE", "LINE 2"},
-                   {"WAVE", "AMOUNT", "ENV|AMT", "ENV|DECAY", "DETUNE", "LINE|2"},
-                   {.5f / 8, .45f, .4f, .35f, .1f, 0.f}, 1, {8, 0, 0, 0, 0, 0}},
-    [ENG_WAVE] = {"WAVE", "WAV", {"BANK", "POS X", "POS Y", "WARP TYPE", "WARP AMOUNT", "SCAN"},
-                  {"BANK", "POS|X", "POS|Y", "WARP|TYPE", "WARP|AMT", "SCAN"},
-                  {0.f, .3f, .5f, .5f / 4, 0.f, .3f}, 1, {0, 0, 0, 4, 0, 0}},
-    [ENG_CHIP] = {"CHIP", "CHP", {"WAVE", "BITS", "RATE", "ARP", "SPEED", "SWEEP"},
-                  {"WAVE", "BITS", "RATE", "ARP", "SPEED", "SWEEP"},
-                  {1.5f / 7, .5f, .75f, .5f / 8, .5f, .5f}, 2, {7, 0, 0, 8, 0, 0}},
-    [ENG_MACRO] = {"MACRO", "MAC", {"SHAPE", "TIMBRE", "COLOR", "TIMBRE ENV", "COLOR ENV", "ENV DECAY"},
-                   {"SHAPE", "TIMBRE", "COLOR", "TIMBRE|ENV", "COLOR|ENV", "ENV|DECAY"},
-                   {.5f / 44, .4f, .5f, .2f, 0.f, .4f}, 1, {44, 0, 0, 0, 0, 0}},
-    [ENG_WHEEL] = {"WHEEL", "WHL", {"BASS", "BODY", "BRIGHT", "PERC", "CLICK", "LESLIE"},
-                   {"BASS", "BODY", "BRIGHT", "PERC", "CLICK", "LESLIE"},
-                   {.8f, .8f, .3f, 2.5f / 5, .3f, .3f}, 2, {0, 0, 0, 5, 0, 0}},
-    [ENG_VOICE] = {"VOICE", "VOX", {"VOWEL", "FORMANT", "BREATH", "VIBRATO", "RESO", "TONE"},
-                   {"VOWEL", "FORMANT", "BREATH", "VIBRATO", "RESO", "TONE"},
-                   {0.f, .5f, .15f, .3f, .5f, .5f}, 0, Z6},
-    [ENG_PHYS] = {"PHYS", "PHY", {"MODEL", "STRUCTURE", "BRIGHT", "DAMPING", "EXCITER", "STRENGTH"},
-                  {"MODEL", "STRUC|TURE", "BRIGHT", "DAMPING", "EXCITER", "STRENGTH"},
-                  {.25f, .25f, .5f, .55f, 0.f, .6f}, 1, {2, 0, 0, 0, 0, 0}},
-    [ENG_GRAIN] = {"GRAIN", "GRN", {"SIZE", "DENSITY", "POSITION", "SPRAY", "PITCH SPREAD", "TONE"},
-                   {"SIZE", "DENSITY", "POSITION", "SPRAY", "PITCH|SPREAD", "TONE"},
-                   {.5f, .5f, .3f, .2f, .1f, .7f}, 2, Z6},
-    [ENG_NOISE] = {"NOISE", "NOI", {"TYPE", "COLOR", "RESO", "HARMONICS", "DENSITY", "GRIT"},
-                   {"TYPE", "COLOR", "RESO", "HARMO|NICS", "DENSITY", "GRIT"},
-                   {.5f / 5, .5f, .6f, .3f, .5f, 0.f}, 2, {5, 0, 0, 0, 0, 0}},
-    [ENG_LXR_TONE] = {"LXR TONE", "LXT", {"WAVE", "FM AMOUNT", "FM FREQ", "FM WAVE", "FM ENV", "DECIMATE"},
-                      {"WAVE", "FM|AMT", "FM|FREQ", "FM|WAVE", "FM|ENV", "DECI|MATE"},
-                      {.5f / 4, .3f, 5.5f / 16, .5f / 4, .4f, 0.f}, 1, {4, 0, 16, 4, 0, 0}},
-    [ENG_LXR_METAL] = {"LXR METAL", "LXM", {"CHARACTER", "SPREAD", "FM AMOUNT", "NOISE", "BAND", "RING"},
-                       {"CHAR|ACTER", "SPREAD", "FM|AMT", "NOISE", "BAND", "RING"},
-                       {0.f, .5f, .2f, .1f, .5f, .3f}, 4, Z6},
-    [ENG_BAZZ] = {"BAZZ", "BAZ", {"OSC MODE", "WAVE POS", "OCTAVE", "SUB OCT", "DRIFT", "TONE"},
-                  {"OSC|MODE", "WAVE|POS", "OCTAVE", "SUB|OCT", "DRIFT", "TONE"},
-                  {.5f / 3, 0.f, 2.5f / 5, .5f / 2, .1f, .75f}, 1, {3, 0, 5, 2, 0, 0}},
-};
-
-/* ---------------------------------------------------------------- option names */
-const int8_t ENG_MACROS[NUM_ENGINES][2] = {
-    [ENG_ANALOG] = {1, 4},     /* PULSE WIDTH, SYNC */
-    [ENG_TRIO] = {3, 4},       /* DETUNE, LEVEL 2 */
-    [ENG_FM6] = {2, 3},        /* MOD INDEX, FEEDBACK */
-    [ENG_FM4] = {3, 4},        /* MOD INDEX, FEEDBACK */
-    [ENG_PHASE] = {1, 2},      /* AMOUNT, ENV AMOUNT */
-    [ENG_WAVE] = {1, 4},       /* POS X, WARP AMOUNT */
-    [ENG_CHIP] = {1, 5},       /* BITS, SWEEP */
-    [ENG_MACRO] = {1, 2},      /* TIMBRE, COLOR */
-    [ENG_WHEEL] = {2, 5},      /* BRIGHT, LESLIE */
-    [ENG_VOICE] = {0, 1},      /* VOWEL, FORMANT */
-    [ENG_PHYS] = {1, 2},       /* STRUCTURE, BRIGHT */
-    [ENG_GRAIN] = {1, 2},      /* DENSITY, POSITION */
-    [ENG_NOISE] = {1, 2},      /* COLOR, RESO */
-    [ENG_LXR_TONE] = {1, 2},   /* FM AMOUNT, FM FREQ */
-    [ENG_LXR_METAL] = {1, 2},  /* SPREAD, FM AMOUNT */
-    [ENG_BAZZ] = {1, 5},       /* WAVE POS, TONE */
+#include "voice_defs.h"
 };
 
 static const char *const AN_INT[9] = {"0", "+3", "+4", "+5", "+7", "+12", "+19", "+24", "-12"};
@@ -130,6 +66,30 @@ const float FM4_RATIOS[20] = {.5f, .75f, 1.f, 1.5f, 2.f, 2.5f, 3.f, 3.5f, 4.f, 5
 static const char *const BZ_MODE[3] = {"VCO", "FM", "WAVE"};
 static const char *const BZ_OCT[5] = {"-2", "-1", "0", "+1", "+2"};
 static const char *const BZ_SUB[2] = {"-1", "-2"};
+static const char *const CH_AMODE[4] = {"UP", "DOWN", "UP DOWN", "RANDOM"};
+static const char *const CH_AMODE3[4] = {"UP", "DWN", "U-D", "RND"};
+static const char *const DR_STACK[8] = {"UNISON", "OCTAVES", "FIFTHS", "OCT + 5TH", "MINOR", "MAJOR", "SUS", "CLUSTER"};
+static const char *const DR_STACK3[8] = {"UNI", "OCT", "5TH", "O+5", "MIN", "MAJ", "SUS", "CLS"};
+const char *const FX_TYPES[8] = {"LASER", "ZAP", "RISER", "FALL", "SIREN", "ALARM", "GLITCH", "BOMB"};
+static const char *const FX_TYPES3[8] = {"LSR", "ZAP", "RIS", "FAL", "SIR", "ALM", "GLT", "BMB"};
+
+/* a 0.1.0 sound's V7..V20: the values that keep it sounding as it did */
+void eng_upgrade(int type, float *p)
+{
+    int k;
+    if (type < 0 || type >= NUM_ENGINES) return;
+    for (k = ENG_SLIDERS_V1; k < ENG_SLIDERS; k++) {
+        const int c = ENG_DEFS[type].upCopy[k];
+        p[k] = c >= 0 ? p[c] : ENG_DEFS[type].up[k];
+    }
+}
+
+static void signed_text(float x, const char *unit, char *buf, int n, int full)
+{
+    const int v = (int)(x + (x >= 0 ? .5f : -.5f));
+    if (full && unit) snprintf(buf, (size_t)n, v > 0 ? "+%d %s" : "%d %s", v, unit);
+    else snprintf(buf, (size_t)n, v > 0 ? "+%d" : "%d", v);
+}
 
 int eng_step(int type, int slider, float v)
 {
@@ -152,6 +112,10 @@ void eng_value_text(int type, int sl, float v, char *buf, int n, int full)
 {
     const int k = eng_step(type, sl, v);
     const char *s = NULL;
+    /* the play row (V13..V20), the same on every voice */
+    if (sl == PR_OCT) { signed_text((float)(k - 2), "OCT", buf, n, full); return; }
+    if (sl == PR_FINE) { signed_text((v - .5f) * 200.f, "CENTS", buf, n, full); return; }
+    if (sl == PR_ENV_A || sl == PR_ENV_B || sl == PR_VEL) { signed_text((v - .5f) * 200.f, "%", buf, n, full); return; }
     switch (type) {
     case ENG_ANALOG:
         if (sl == 3) s = AN_INT[k];
@@ -174,9 +138,12 @@ void eng_value_text(int type, int sl, float v, char *buf, int n, int full)
         break;
     case ENG_FM4:
         if (sl == 0) { snprintf(buf, (size_t)n, full ? "ALGORITHM %d" : "A%d", k + 1); return; }
-        if (sl == 1 || sl == 2) { ratio_text(FM4_RATIOS[k], buf, n, full); return; }
+        if (sl == 1 || sl == 2 || sl == 6) { ratio_text(FM4_RATIOS[k], buf, n, full); return; }
         break;
-    case ENG_PHASE: if (sl == 0) s = full ? PD_WAVE[k] : PD_WAVE3[k]; break;
+    case ENG_PHASE:
+        if (sl == 0 || sl == 6) s = full ? PD_WAVE[k] : PD_WAVE3[k];
+        else if (sl == 9) { signed_text((float)(k - 1), "OCT", buf, n, full); return; }
+        break;
     case ENG_WAVE:
         if (sl == 3) s = full ? WT_WARP[k] : WT_WARP3[k];
         else if (sl == 0) {
@@ -188,6 +155,8 @@ void eng_value_text(int type, int sl, float v, char *buf, int n, int full)
     case ENG_CHIP:
         if (sl == 0) s = full ? CH_WAVE[k] : CH_WAVE3[k];
         else if (sl == 3) s = full ? CH_ARP[k] : CH_ARP3[k];
+        else if (sl == 7) { snprintf(buf, (size_t)n, full ? "%d OCT" : "%d", k + 1); return; }
+        else if (sl == 8) s = full ? CH_AMODE[k] : CH_AMODE3[k];
         else if (sl == 1) { snprintf(buf, (size_t)n, full ? "%d BITS" : "%d", (int)(2.f + 14.f * v + .5f)); return; }
         else if (sl == 2) {
             const float hz = 2000.f * exp2f(v * 4.4627f);
@@ -219,7 +188,13 @@ void eng_value_text(int type, int sl, float v, char *buf, int n, int full)
         if (sl == 0) s = BZ_MODE[k];
         else if (sl == 2) s = BZ_OCT[k];
         else if (sl == 3) s = BZ_SUB[k];
+        else if (sl == 8) s = BZ_OCT[k];
         break;
+    case ENG_DRONE:
+        if (sl == 1) { snprintf(buf, (size_t)n, full ? "%d VOICES" : "%d", k + 2); return; }
+        if (sl == 3) s = full ? DR_STACK[k] : DR_STACK3[k];
+        break;
+    case ENG_FX: if (sl == 0) s = full ? FX_TYPES[k] : FX_TYPES3[k]; break;
     default: break;
     }
     if (s) { snprintf(buf, (size_t)n, "%s", s); return; }
@@ -268,6 +243,9 @@ void eng_render(Eng *e, const EngIn *in, float *out, int n)
     case ENG_LXR_TONE: lxrtone_render(&e->u.lt, in, out, n); break;
     case ENG_LXR_METAL: lxrmetal_render(&e->u.lm, in, out, n); break;
     case ENG_BAZZ: bazz_render(&e->u.bz, in, out, n); break;
+    case ENG_DRONE: drone_render(&e->u.dr, in, out, n); break;
+    case ENG_TEXTURE: texture_render(&e->u.tx, in, out, n); break;
+    case ENG_FX: fx_render_voice(&e->u.fx, in, out, n); break;
     case ENG_MACRO: case ENG_WAVE: case ENG_PHYS:
         if (e->mi) { mi_render(e->mi, e->type, in, out, n); break; }
         memset(out, 0, sizeof(float) * (size_t)n);

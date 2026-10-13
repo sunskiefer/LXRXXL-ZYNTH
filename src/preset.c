@@ -225,7 +225,7 @@ static int parse_sound(const char *text, Sound *s)
             continue;
         }
         if (sscanf(key, "m%d_%d", &e, &j) == 2) {   /* 0.1.0: a voice's six sliders */
-            if (e >= 0 && e < NUM_ENGINES && j >= 0 && j < ENG_SLIDERS && v >= 0.f && v <= 1.f) s->full[e][SP_V1 + j] = v;
+            if (e >= 0 && e < NUM_ENGINES && j >= 0 && j < ENG_SLIDERS_V1 && v >= 0.f && v <= 1.f) s->full[e][SP_V1 + j] = v;
             continue;
         }
         for (k = 0; k < SP_COUNT; k++)

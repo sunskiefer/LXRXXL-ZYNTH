@@ -237,6 +237,8 @@ def main():
     cover[3:, :963] = True
     Image.fromarray(comp(big[my:my + 625, mx:mx + 1000], mb, modules_printing(mb, reg, cover)).astype(np.uint8),
                     "RGBA").save(os.path.join(OUT, "modules_bg.png"))
+    # ---- MIXER (0.2.0): the texture alone, at the same scale
+    Image.fromarray(big[my:my + 491, mx:mx + 1000].astype(np.uint8), "RGBA").save(os.path.join(OUT, "mixer_bg.png"))
     cw, ch = cl.shape[1], cl.shape[0]
     Image.fromarray(big[my - 3:my - 3 + ch, mx - 37:mx - 37 + cw].astype(np.uint8), "RGBA").save(
         os.path.join(OUT, "circuit_clean.png"))

@@ -7,8 +7,8 @@
  * Each track plays a STYLE, by default from its voice (AUTO):
  *   BASS  (BAZZ)                              chord roots on an euclidean rhythm, fifths, octaves and approach notes,
  *                                             slides and accents: an acid or a synth bass line
- *   CHORD (WAVE, WHEEL, GRAIN, TRIO, VOICE)   one chord tone per track (track 1 the root, 2 the third, 3 the fifth...,
- *                                             so chord tracks build chords together), voice-led to the nearest octave:
+ *   CHORD (WAVE, WHEEL, GRAIN, TRIO, VOICE,   one chord tone per track (track 1 the root, 2 the third, 3 the fifth...,
+ *          DRONE, TEXTURE)                    so chord tracks build chords together), voice-led to the nearest octave:
  *                                             held through each chord at a low amount, stabs higher, pulses at the top
  *   ARP   (CHIP, FM4, MACRO, PHASE)           the chord's tones over one to three octaves in the order
  *                                             idx(i) = (a * i + b) mod m, a coprime with m: up, down and every
@@ -16,7 +16,7 @@
  *   LEAD  (ANALOG, FM6, PHYS, LXR TONE)       a contour of two sines, y(i) = A1 sin(2 pi i / P1 + p1) + A2 sin(2 pi i / P2
  *                                             + p2), read as scale degrees, landing on chord tones on the beats, with
  *                                             rests between phrases and slides between near notes
- *   HITS  (LXR METAL, NOISE)                  sparse euclidean hits on the high chord tones
+ *   HITS  (LXR METAL, NOISE, FX)              sparse euclidean hits on the high chord tones
  * The amount knob is the density. A track whose SCALE is set keeps its scale (from C) instead of the pattern's key.
  *
  * The velocities follow the track's velocity mode: FLAT (all 100), GROOVE (the beats strong, the off-beats soft),
@@ -153,9 +153,10 @@ int rnd_styleOf(Bl *x, int t)
     if (st != RS_AUTO && st < RS_COUNT) return st;
     switch ((int)(x->p.snd[t].v[SP_VOICE] + 0.5f)) {
     case ENG_BAZZ: return RS_BASS;
-    case ENG_WAVE: case ENG_WHEEL: case ENG_GRAIN: case ENG_TRIO: case ENG_VOICE: return RS_CHORD;
+    case ENG_WAVE: case ENG_WHEEL: case ENG_GRAIN: case ENG_TRIO: case ENG_VOICE: case ENG_DRONE: case ENG_TEXTURE:
+        return RS_CHORD;
     case ENG_CHIP: case ENG_FM4: case ENG_MACRO: case ENG_PHASE: return RS_ARP;
-    case ENG_LXR_METAL: case ENG_NOISE: return RS_HITS;
+    case ENG_LXR_METAL: case ENG_NOISE: case ENG_FX: return RS_HITS;
     default: return RS_LEAD;
     }
 }

@@ -22,9 +22,11 @@ void wheel_render(WheelSt *s, const EngIn *in, float *out, int n)
     const float tH = ls > 0.5f ? 6.7f : 0.8f, tD = ls > 0.5f ? 5.8f : 0.67f;
     const float splitA = 1.f - expf(-TWO_PI_F * 800.f / SR);
     int b, k;
-    lv[0] = p[0]; lv[1] = p[0] * 0.7f;
+    const float scanD = p[10], leak = p[11];
+    lv[0] = p[0]; lv[1] = p[0] * 0.7f + p[6];
     lv[2] = p[1]; lv[3] = p[1] * 0.8f;
-    lv[4] = p[2] * 0.8f; lv[5] = p[2] * 0.7f; lv[6] = p[2] * 0.5f; lv[7] = p[2] * 0.5f; lv[8] = p[2] * 0.6f;
+    lv[4] = p[2] * 0.8f + p[7]; lv[5] = p[2] * 0.7f; lv[6] = p[2] * 0.5f + p[8]; lv[7] = p[2] * 0.5f;
+    lv[8] = p[2] * 0.6f + p[9];
     for (b = 0; b < 9; b++) {
         float f = in->freq * BARS[b];
         while (f > 5900.f) f *= 0.5f;   /* the top tonewheels fold back an octave */
@@ -46,9 +48,22 @@ void wheel_render(WheelSt *s, const EngIn *in, float *out, int n)
             float x = 0.f;
             for (b = 0; b < 9; b++) {
                 s->ph[b] += inc[b];
-                if (lv[b] > 0.f) x += lv[b] * esin(s->ph[b]);
+                if (lv[b] > 0.f || leak > 0.001f) x += (lv[b] + leak * 0.04f) * esin(s->ph[b]);
             }
             x *= norm;
+            if (leak > 0.001f) x += leak * 0.01f * brand(&s->noise);   /* LEAKAGE: the other wheels and a little hiss */
+            if (scanD > 0.001f) {   /* the scanner vibrato / chorus: a short delay swept at 7 Hz, mixed with the dry */
+                float d, fr;
+                int di, r0, r1;
+                s->scanBuf[s->scanW] = x;
+                s->scanPh += 7.f / SR;
+                if (s->scanPh >= 1.f) s->scanPh -= 1.f;
+                d = 4.f + scanD * 30.f * (0.5f + 0.5f * esinf(s->scanPh));
+                di = (int)d; fr = d - (float)di;
+                r0 = (s->scanW - di) & 63; r1 = (r0 - 1) & 63;
+                s->scanW = (s->scanW + 1) & 63;
+                x = 0.5f * x + 0.5f * (s->scanBuf[r0] + fr * (s->scanBuf[r1] - s->scanBuf[r0]));
+            }
             if (s->perc > 0.0005f) {   /* the percussion: the 8' wheel's 2nd or 3rd harmonic, decaying */
                 x += 0.6f * s->perc * esin((uint32_t)((uint64_t)s->ph[2] * (uint64_t)percRatio));
                 s->perc *= percDec;
@@ -109,9 +124,16 @@ void voice_fmt_render(VoiceSt *s, const EngIn *in, float *out, int n)
     const float vibD = p[3] * 0.6f;
     const float wide = 1.6f - 1.3f * p[4];
     const float toneA = 1.f - expf(-TWO_PI_F * in->freq * (1.5f + 30.f * p[5] * p[5]) / SR);
+    const float singer = p[6], nasal = p[7], pulse = p[8], choir = p[9], jitter = p[10], batk = p[11];
+    const SvfCo cs = svf_co(2900.f * shift, 6.f), cn = svf_co(950.f * shift, 3.f);
     SvfCo c[3];
     int j, k;
-    if (in->trig) { s->vibAmt = 0.f; if (!s->noise) s->noise = 0x7FEB352Du; }
+    if (in->trig) { s->vibAmt = 0.f; if (!s->noise) s->noise = 0x7FEB352Du; s->batk = batk; }
+    if (!s->noise) s->noise = 0x7FEB352Du;
+    if (jitter > 0.001f) {   /* JITTER: the voice's small, quick pitch wanderings */
+        s->jitT -= (float)n;
+        if (s->jitT <= 0.f) { s->jitT = SR * 0.03f; s->jit += 0.5f * (brand(&s->noise) - s->jit); }
+    }
     for (j = 0; j < 3; j++) {
         const float f = (VOWELS[vi][j] + vf * (VOWELS[vi + 1][j] - VOWELS[vi][j])) * shift;
         c[j] = svf_co(f, f / (VBW[j] * wide));
@@ -124,13 +146,29 @@ void voice_fmt_render(VoiceSt *s, const EngIn *in, float *out, int n)
         uint32_t inc;
         s->vibPh += 5.5f / SR;
         if (s->vibPh >= 1.f) s->vibPh -= 1.f;
-        f = in->freq * semis(vibD * s->vibAmt * esinf(s->vibPh));
+        f = in->freq * semis(vibD * s->vibAmt * esinf(s->vibPh) + jitter * 0.4f * s->jit);
         inc = ph_inc(f);
         s->ph += inc;
         src = saw_blep(ph_unit(s->ph), (float)inc / PH_ONE);
+        if (pulse > 0.001f) src = src * (1.f - pulse) + pulse * sq_blep(ph_unit(s->ph), (float)inc / PH_ONE, 0.12f) * 0.8f;
+        if (choir > 0.001f) {   /* CHOIR: two more singers, a little off the pitch */
+            int c2;
+            for (c2 = 0; c2 < 2; c2++) {
+                const uint32_t ci2 = ph_inc(f * semis((c2 ? 0.12f : -0.1f) * (0.3f + choir)));
+                s->chPh[c2] += ci2;
+                src += choir * 0.7f * saw_blep(ph_unit(s->chPh[c2]), (float)ci2 / PH_ONE);
+            }
+            src /= 1.f + choir * 1.1f;
+        }
         s->lp += toneA * (src - s->lp);          /* the glottis's slope */
-        src = s->lp * (1.f - breath * 0.7f) + breath * brand(&s->noise) * 0.8f;
+        {
+            const float br = clampe(breath + s->batk, 0.f, 1.f);
+            src = s->lp * (1.f - br * 0.7f) + br * brand(&s->noise) * 0.8f;
+            s->batk *= 0.99985f;
+        }
         for (j = 0; j < 3; j++) x += VGAIN[j] * c[j].k * svf_bp(c[j], &s->s1[j], &s->s2[j], src, NULL);
+        if (singer > 0.001f) x += singer * 0.5f * cs.k * svf_bp(cs, &s->s1[3], &s->s2[3], src, NULL);
+        if (nasal > 0.001f) x -= nasal * 0.8f * cn.k * svf_bp(cn, &s->s1[4], &s->s2[4], x, NULL);
         out[k] = x * 4.4f;
     }
 }
@@ -206,15 +244,20 @@ void grain_render(GrainSt *s, const EngIn *in, float *out, int n)
     const float spray = p[3];
     const float spread = p[4];
     const float lpA = 1.f - expf(-TWO_PI_F * 200.f * exp2f(p[5] * 7.f) / SR);
+    const float rev = p[6], win = p[7], scanSp = (p[8] - 0.5f) * 2.f, dtn = p[9], octUp = p[10], jit = p[11];
     const float overlap = rate * size;
     const float norm = 1.f / sqrtf(overlap < 1.f ? 1.f : overlap);
     int k, g;
     if (!s->rnd) s->rnd = 0x3C6EF372u;
+    if (fabsf(scanSp) > 0.02f) {   /* SCAN SPEED: the position travels through the waves, either way */
+        s->scan += scanSp * fabsf(scanSp) * 0.5f * (float)n / SR;
+        s->scan -= floorf(s->scan);
+    } else s->scan = 0.f;
     for (k = 0; k < n; k++) {
         float x = 0.f;
         s->next -= 1.f;
         if (s->next <= 0.f) {   /* a new grain */
-            s->next += SR / rate * (0.7f + 0.6f * frand(&s->rnd));
+            s->next += SR / rate * (1.f - jit + 2.f * jit * frand(&s->rnd));
             for (g = 0; g < MAX_GRAINS; g++) if (!s->g[g].on) break;
             if (g < MAX_GRAINS) {
                 Grain *gr = &s->g[g];
@@ -222,10 +265,17 @@ void grain_render(GrainSt *s, const EngIn *in, float *out, int n)
                 float f;
                 int mip;
                 if (spread > 0.66f) semi = 12.f * floorf(semi / 12.f + 0.5f);
+                if (dtn > 0.001f) semi += dtn * 0.3f * brand(&s->rnd);
+                if (octUp > 0.001f && frand(&s->rnd) < octUp * 0.6f) semi += 12.f;
                 f = in->freq * semis(semi);
-                gr->inc = ph_inc(f);
+                gr->inc = (int32_t)ph_inc(f);
+                if (rev > 0.001f && frand(&s->rnd) < rev) gr->inc = -gr->inc;   /* REVERSE: this grain backwards */
                 gr->ph = xrand(&s->rnd);
-                gr->pos = clampe(p[2] + spray * brand(&s->rnd) * 0.5f, 0.f, 1.f);
+                {
+                    float pos = p[2] + s->scan + spray * brand(&s->rnd) * 0.5f;
+                    if (s->scan > 0.f) pos -= floorf(pos);
+                    gr->pos = clampe(pos, 0.f, 1.f);
+                }
                 gr->t = 0.f;
                 gr->dt = 256.f / (size * SR);
                 mip = f * 64.f < SR * 0.5f ? 0 : f * 16.f < SR * 0.5f ? 1 : 2;
@@ -239,8 +289,12 @@ void grain_render(GrainSt *s, const EngIn *in, float *out, int n)
             if (!gr->on) continue;
             wi = (int)gr->t;
             wfr = gr->t - (float)wi;
-            x += (ENG_HANN[wi] + wfr * (ENG_HANN[wi + 1] - ENG_HANN[wi])) * gw_read(gr->on - 1, gr->pos, gr->ph);
-            gr->ph += gr->inc;
+            {
+                float wv = ENG_HANN[wi] + wfr * (ENG_HANN[wi + 1] - ENG_HANN[wi]);
+                if (win > 0.001f) wv = clampe(wv * (1.f + win * 4.f), 0.f, 1.f);   /* WINDOW: Hann to a flat top */
+                x += wv * gw_read(gr->on - 1, gr->pos, gr->ph);
+            }
+            gr->ph += (uint32_t)gr->inc;
             gr->t += gr->dt;
             if (gr->t >= 256.f) gr->on = 0;
         }
@@ -264,11 +318,18 @@ void noise_render(NoiseSt *s, const EngIn *in, float *out, int n)
     const float grit = p[5];
     const float levels = exp2f(15.f - grit * 12.f);
     const float holdHz = SR * exp2f(-grit * 4.f);
+    const float swAmt = (p[6] - 0.5f) * 48.f, pulse = p[7], prate = 1.f + 29.f * p[8] * p[8];
+    const float tone = p[9], inh = p[10];
+    const float lcA = p[11] > 0.001f ? 1.f - expf(-TWO_PI_F * 20.f * powf(100.f, p[11]) / SR) : 0.f;
+    const float rmul[3] = {1.f, 2.f + inh * 1.3f, 3.f + inh * 2.1f};
+    const uint32_t incT = ph_inc(in->freq);
     SvfCo c[3];
     float g[3];
     int j, k;
+    if (in->trig) s->sweep = 1.f;
+    s->sweep *= expf(-(float)n / (0.2f * SR));
     for (j = 0; j < 3; j++) {
-        const float f = in->freq * (float)(j + 1);
+        const float f = in->freq * rmul[j] * (fabsf(swAmt) > 0.1f ? semis(swAmt * s->sweep) : 1.f);
         c[j] = svf_co(f, q);
         g[j] = sqrtf(SR * q / (2.f * (f > 20.f ? f : 20.f))) * 0.3f;
         if (g[j] > 60.f) g[j] = 60.f;
@@ -326,6 +387,13 @@ void noise_render(NoiseSt *s, const EngIn *in, float *out, int n)
             if (s->dust >= 1.f) { s->dust -= floorf(s->dust); s->hold = floorf(x * levels + 0.5f) / levels; }
             x = s->hold;
         }
+        if (pulse > 0.001f) {   /* PULSE: the noise chopped at PULSE RATE */
+            s->pulsePh += prate / SR;
+            if (s->pulsePh >= 1.f) s->pulsePh -= 1.f;
+            x *= 1.f - pulse * (s->pulsePh < 0.5f ? 0.f : 1.f);
+        }
+        if (tone > 0.001f) { s->tonePh += incT; x = x * (1.f - 0.4f * tone) + tone * 0.6f * esin(s->tonePh); }
+        if (lcA > 0.f) { s->lc += lcA * (x - s->lc); x -= s->lc; }
         out[k] = clampe(x * 1.6f, -2.f, 2.f) * 0.9f;
     }
 }

@@ -127,6 +127,9 @@ void voice_noteOn(Voice *v, const Sound *s, float note, float vel, int accent, i
     v->aStage = 1;
     v->fStage = 1;
     v->fenv = 0;
+    v->menvStage = 1;
+    v->menv = 0;
+    v->vibAmt = 0;
     if (penv) v->penv = 1.f;
     if (!v->active) v->phSub = v->phPm = 0;
     v->active = 1;
@@ -200,6 +203,16 @@ void voice_render(Voice *v, const Sound *s, float bpm, float *L, float *R, int n
     const float fDecT = 0.01f * powf(400.f, s->v[SP_VCF_DEC]);
     const float fDecN = expf(-1.f / (fDecT * SR / CR));
     const float fDecA = expf(-1.f / ((fDecT < 0.2f ? fDecT : 0.2f) * SR / CR));   /* accented: the 303's short decay */
+    const float fSus = clampf(s->v[SP_VCF_SUS], 0, 1);
+    const float fRel = expf(-1.f / (voice_relSeconds(s->v[SP_VCF_REL]) * 0.25f * SR / CR));
+    /* the play row (V13..V20) */
+    const float *pr = &s->v[SP_V1];
+    const float octS = (float)(eng_step(type, PR_OCT, pr[PR_OCT]) - 2) * 12.f + (pr[PR_FINE] - 0.5f) * 2.f;
+    const float vibD = pr[PR_VIB] * pr[PR_VIB] * 0.8f;
+    const float mAtk = coef(0.001f + 2.f * pr[PR_ENV_ATK] * pr[PR_ENV_ATK]);
+    const float mDec = expf(-1.f / ((0.01f + 5.f * pr[PR_ENV_DEC] * pr[PR_ENV_DEC]) * SR / CR));
+    const float envA = (pr[PR_ENV_A] - 0.5f) * 2.f, envB = (pr[PR_ENV_B] - 0.5f) * 2.f, velA = (pr[PR_VEL] - 0.5f) * 2.f;
+    const int tA = ENG_DEFS[type].target[0], tB = ENG_DEFS[type].target[1], tV = ENG_DEFS[type].target[2];
     const float pDec = expf(-1.f / (0.005f * powf(200.f, s->v[SP_PITCH_DEC]) * SR / CR));
     const float pAmt = 48.f * s->v[SP_PITCH_AMT] * s->v[SP_PITCH_AMT];
     const float sweepDec = expf(-1.f / (0.6f * SR / CR));
@@ -237,7 +250,17 @@ void voice_render(Voice *v, const Sound *s, float bpm, float *L, float *R, int n
             if (v->aenv < 1e-5f) { v->aenv = 0; v->aStage = 0; }
         }
         if (v->fStage == 1) { v->fenv += fAtk * (1.25f - v->fenv); if (v->fenv >= 1.f) { v->fenv = 1.f; v->fStage = 2; } }
-        else if (v->fStage == 2) v->fenv *= v->accent > 0.5f ? fDecA : fDecN;
+        else if (v->fStage == 2) {   /* the filter's ADSR: no sustain, it decays on (as 0.1.0); else held, then released */
+            const float fd = v->accent > 0.5f ? fDecA : fDecN;
+            if (v->gate) v->fenv = fSus + (v->fenv - fSus) * fd;
+            else v->fenv *= fSus > 0.001f ? fRel : fd;
+        }
+        /* the modulation envelope (attack, decay) and the vibrato's fade-in */
+        if (v->menvStage == 1) { v->menv += mAtk * (1.02f - v->menv); if (v->menv >= 1.f) { v->menv = 1.f; v->menvStage = 2; } }
+        else if (v->menvStage == 2) v->menv *= mDec;
+        v->vibAmt += (1.f - v->vibAmt) * (CR / (0.3f * SR));
+        v->vibPh += 5.5f * CR / SR;
+        if (v->vibPh >= 1.f) v->vibPh -= 1.f;
         v->penv *= pDec;
         v->sweep *= sweepDec;
         if (v->glide > 0) {
@@ -247,13 +270,17 @@ void voice_render(Voice *v, const Sound *s, float bpm, float *L, float *R, int n
         /* ---- the modulator (one value per CR frames) */
         {
             const float lv = lfo_step(v, modWave, lfoInc * CR) * lfoLvl * (v->modOn ? 1.f : 0.f);
-            float pitch = v->note + pAmt * v->penv;
+            float pitch = v->note + pAmt * v->penv + octS;
             float cut = baseOct + keyTrack * (v->note - 48.f) / 12.f
                         + envOct * v->fenv * (1.f + accAmt * v->accent)
                         + accAmt * (0.8f * v->accent + 1.2f * v->sweep);
             float drv = driveK;
             int j;
             for (j = 0; j < ENG_SLIDERS; j++) in.p[j] = sl[j];
+            if (envA != 0.f && tA >= 0) in.p[tA] = clampf(in.p[tA] + envA * v->menv, 0, 1);
+            if (envB != 0.f && tB >= 0) in.p[tB] = clampf(in.p[tB] + envB * v->menv, 0, 1);
+            if (velA != 0.f && tV >= 0) in.p[tV] = clampf(in.p[tV] + velA * (v->vel - 0.5f), 0, 1);
+            if (vibD > 0.f) pitch += vibD * v->vibAmt * sinf(TWO_PI * v->vibPh);
             switch (modDest) {
             case 0: pitch += 12.f * lv; break;
             case 1: cut += 4.f * lv; break;

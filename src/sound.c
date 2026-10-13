@@ -12,7 +12,9 @@
 #include "param_map.h"
 
 typedef struct { uint8_t sp; float v; } Set;
+typedef Set StarterSet;
 #define END {255, 0}
+#include "starter_defs.h"
 
 /* what every home sound starts from: a clean chain (the voice as it comes out of its engine) */
 static const Set CLEAN[] = {
@@ -44,6 +46,10 @@ static const Set HOME[NUM_ENGINES][13] = {
     /* BAZZLINE's bass as BAZZLINE starts it */
     [ENG_BAZZ]      = {{SP_DRIVE, .15f}, {SP_VCA_DEC, .45f}, {SP_SUSTAIN, 0}, {SP_VCF_ENV, .5f}, {SP_RESO, .55f}, {SP_CUTOFF, .35f},
                        {SP_ACC_AMT, .5f}, {SP_ACC_SWEEP, .35f}, {SP_KEYTRACK, .5f}, {SP_VCA_REL, .2f}, END},
+    /* 0.2.0 */
+    [ENG_DRONE]     = {{SP_VCA_ATK, .3f}, {SP_VCA_REL, .65f}, END},
+    [ENG_TEXTURE]   = {{SP_VCA_ATK, .35f}, {SP_VCA_REL, .65f}, END},
+    [ENG_FX]        = {{SP_VCA_REL, .25f}, END},
 };
 
 static int keep(int sp) { return sp == SP_VOICE || sp == SP_LEVEL || sp == SP_PAN; }
@@ -91,6 +97,24 @@ void sound_resetVoice(Sound *s, int type)
 {
     sound_home(type, s->full[type]);
     if (cur(s) == type) load(s, type);
+}
+
+/* a voice's starter sound idx (0: its home sound) into the track's memory of it (and in use, when it is the voice) */
+void sound_starter(Sound *s, int type, int idx)
+{
+    int i;
+    if (type < 0 || type >= NUM_ENGINES) return;
+    idx = ((idx % NUM_STARTERS) + NUM_STARTERS) % NUM_STARTERS;
+    sound_home(type, s->full[type]);
+    for (i = 0; i < STARTER_SETS && STARTERS[type][idx][i].sp != 255; i++)
+        s->full[type][STARTERS[type][idx][i].sp] = STARTERS[type][idx][i].v;
+    if (cur(s) == type) load(s, type);
+}
+
+const char *sound_starterName(int type, int idx)
+{
+    if (type < 0 || type >= NUM_ENGINES) return "";
+    return STARTER_NAMES[type][((idx % NUM_STARTERS) + NUM_STARTERS) % NUM_STARTERS];
 }
 
 /* v[] written back into the voice in use's memory (after presets, the randomizer, a knob) */

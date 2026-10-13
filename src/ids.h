@@ -22,6 +22,20 @@ enum {
     SP_V4,
     SP_V5,
     SP_V6,
+    SP_V7,
+    SP_V8,
+    SP_V9,
+    SP_V10,
+    SP_V11,
+    SP_V12,
+    SP_V13,
+    SP_V14,
+    SP_V15,
+    SP_V16,
+    SP_V17,
+    SP_V18,
+    SP_V19,
+    SP_V20,
     SP_FM_RATIO,
     SP_DRIVE_POS,
     SP_CURVE,
@@ -44,9 +58,13 @@ enum {
     SP_MOD_SYNC,
     SP_VCA_REL,
     SP_SUSTAIN,
+    SP_VCF_SUS,
+    SP_VCF_REL,
     SP_COUNT
 };
 #define SP_COUNT_V1 42   /* 0.1.0's */
+/* 0.1.0's order of the sound parameters (its Sound.v[]): each one's SP id now */
+#define SP_FROM_V1 {SP_DRIVE, SP_SPREAD, SP_VCA_DEC, SP_VCF_ENV, SP_RESO, SP_CUTOFF, SP_FM, SP_SUB, SP_NOISE, SP_LFO_RATE, SP_LFO_LVL, SP_PITCH_AMT, SP_WAVE, SP_FMODE, SP_VOICE, SP_V1, SP_V2, SP_V3, SP_V4, SP_V5, SP_V6, SP_FM_RATIO, SP_DRIVE_POS, SP_CURVE, SP_ACC_AMT, SP_ACC_SWEEP, SP_SLIDE, SP_VCF_ATK, SP_VCF_DEC, SP_VCA_ATK, SP_PITCH_DEC, SP_LEVEL, SP_PAN, SP_FMODEL, SP_KEYTRACK, SP_SW_MODE, SP_SW_RATE, SP_SW_MIX, SP_MOD_WAVE, SP_MOD_DEST, SP_MOD_SYNC, SP_VCA_REL}
 enum {
     G_DLY_TIME,
     G_DLY_IN,
@@ -129,7 +147,9 @@ enum {
     B_V_NEXT = 64,
     B_RND = 65,
     B_SRND = 66,
-    NUM_BUTTONS = 67
+    B_SND_PREV = 67,
+    B_SND_NEXT = 68,
+    NUM_BUTTONS = 69
 };
 #define NUM_SLOTS 64
 #define GLYPHS " 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-+/"

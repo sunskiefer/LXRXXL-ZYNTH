@@ -296,6 +296,36 @@ int main(int argc, char **argv)
         set(in, "trk1", "1");
     }
 
+    /* ---- every voice's eight starter sounds play (SOUND < > on the VOICE page), at a sensible level */
+    {
+        uint8_t on[3] = {0x90, 52, 100}, off[3] = {0x80, 52, 0};
+        int ty, si;
+        char b2[96] = "";
+        set(in, "trk1", "1");
+        set(in, "shift", "1"); set(in, "mute", "1");   /* the factory project */
+        x->p.mutes = 0;
+        setf(in, "dly_wet", 0.f);
+        for (ty = 0; ty < NUM_ENGINES; ty++) {
+            snprintf(key, sizeof key, "%d", ty);
+            set(in, "voice", key);
+            for (si = 0; si < NUM_STARTER_SOUNDS; si++) {
+                if (si) set(in, "snd_next", "1");
+                else { set(in, "v_reset", "1"); }
+                CHECK(x->p.starter[0][ty] == si, "SOUND > steps (%d)", x->p.starter[0][ty]);
+                E->get_param(in, "snd_name", b2, sizeof b2);
+                CHECK(b2[0] && !strcmp(b2, sound_starterName(ty, si)), "the SOUND name shows ('%s')", b2);
+                E->midi(in, on, 3);
+                peak = play(in, &ppq, 120, 0.7, 0, &rms, NULL);
+                E->midi(in, off, 3);
+                if (!(rms > 0.004 && peak < 0.999f && peak == peak))
+                    printf("starter %s %s: peak %.3f rms %.4f\n", ENG_DEFS[ty].name, b2, peak, rms);
+                CHECK(rms > 0.004 && peak < 0.999f && peak == peak, "%s %s plays (peak %f rms %f)", ENG_DEFS[ty].name, b2, peak, rms);
+                play(in, &ppq, 120, 0.6, 0, &rms, NULL);
+            }
+            set(in, "snd_next", "1");
+            CHECK(x->p.starter[0][ty] == 0, "SOUND > round");
+        }
+    }
     /* ---- every voice plays, by MIDI on track 1 */
     {
         uint8_t on[3] = {0x90, 57, 100}, off[3] = {0x80, 57, 0};
@@ -354,8 +384,9 @@ int main(int argc, char **argv)
         set(in, "v_next", "1");
         CHECK((int)x->p.snd[1].v[SP_VOICE] == ENG_FM4, "VOICE > (%g)", x->p.snd[1].v[SP_VOICE]);
         set(in, "v_prev", "1"); set(in, "v_prev", "1"); set(in, "v_prev", "1"); set(in, "v_prev", "1");
-        CHECK((int)x->p.snd[1].v[SP_VOICE] == ENG_BAZZ, "VOICE < round to BAZZ (%g)", x->p.snd[1].v[SP_VOICE]);
-        CHECK((int)getf(in, "voice") == ENG_BAZZ, "MPC reads the voice (%g)", getf(in, "voice"));
+        CHECK((int)x->p.snd[1].v[SP_VOICE] == NUM_ENGINES - 1, "VOICE < round to the last voice (%g)", x->p.snd[1].v[SP_VOICE]);
+        CHECK((int)getf(in, "voice") == NUM_ENGINES - 1, "MPC reads the voice (%g)", getf(in, "voice"));
+        set(in, "voice", "15");
         CHECK(x->p.snd[1].v[SP_VCA_DEC] > 0.3f && x->p.snd[1].v[SP_RESO] > 0.4f, "BAZZ's home: BAZZLINE's bass");
         set(in, "trk1", "1");
     }
@@ -376,7 +407,7 @@ int main(int argc, char **argv)
     }
     /* ---- a 0.1.0 project (state version 1) loads: its sounds, the voices' sliders, the patterns */
     {
-        typedef struct { float v[SP_COUNT_V1]; float mem[NUM_ENGINES][ENG_SLIDERS]; } SoundV1;
+        typedef struct { float v[SP_COUNT_V1]; float mem[NUM_ENGINES_V1][ENG_SLIDERS_V1]; } SoundV1;
         typedef struct {
             SoundV1 snd[NUM_TRACKS]; Pattern pats[NUM_PATTERNS]; float g[G_COUNT]; float bpm;
             uint8_t links, mutes, gdOn, dlySync; float dlyTap; uint8_t pad[4]; float send[NUM_TRACKS]; float master;
@@ -395,7 +426,7 @@ int main(int argc, char **argv)
             o.snd[t].v[SP_VCA_DEC] = t & 1 ? 0.5f : 0.f;
             o.snd[t].v[SP_VOICE] = (float)(t * 2);
             o.snd[t].v[SP_CUTOFF] = 0.1f * t;
-            for (e = 0; e < NUM_ENGINES; e++) for (k = 0; k < ENG_SLIDERS; k++) o.snd[t].mem[e][k] = 0.01f * (e + k);
+            for (e = 0; e < NUM_ENGINES_V1; e++) for (k = 0; k < ENG_SLIDERS_V1; k++) o.snd[t].mem[e][k] = 0.01f * (e + k);
         }
         memcpy(o.pats, x->p.pats, sizeof o.pats);
         o.bpm = 133; o.master = 0.7f; o.mutes = 5;
@@ -525,7 +556,7 @@ int main(int argc, char **argv)
     }
     /* ---- the worst case's time: eight tracks of the heaviest voices, unison, FM, the swarm */
     {
-        static const int heavy[8] = {ENG_MACRO, ENG_PHYS, ENG_FM6, ENG_GRAIN, ENG_WHEEL, ENG_WAVE, ENG_VOICE, ENG_TRIO};
+        static const int heavy[8] = {ENG_MACRO, ENG_PHYS, ENG_FM6, ENG_GRAIN, ENG_DRONE, ENG_WAVE, ENG_TEXTURE, ENG_TRIO};
         int t;
         struct timespec t0, t1;
         double us;
@@ -534,7 +565,8 @@ int main(int argc, char **argv)
             sound_setVoice(s, heavy[t]);
             s->v[SP_SW_MODE] = 1; s->v[SP_SPREAD] = 0.6f; s->v[SP_SW_MIX] = 0.8f;
             s->v[SP_FM] = 0.4f; s->v[SP_SUB] = 0.3f; s->v[SP_NOISE] = 0.1f; s->v[SP_VCA_DEC] = 0.f;
-            s->v[SP_V2] = 1.f;   /* GRAIN: dense */
+            s->v[SP_V2] = 1.f;   /* GRAIN: dense; DRONE: seven oscillators */
+            { int k2; for (k2 = 6; k2 < 12; k2++) s->v[SP_V1 + k2] = 0.7f; }   /* the deeper controls on */
             voice_noteOn(&x->v[t], s, 48.f + t * 3, 0.8f, 0, 0, 0, 1);
         }
         setf(in, "dly_wet", 0.5f);

@@ -72,11 +72,16 @@ struct Mi {
   int fifoLen, fifoPos;
   int shape;
   float menv;
+  int mstage;              // the shape envelope: 1 attack, 2 decay
+  float mhold, mholdPh, mdrift, mdriftT, sigA, sigB, tilt;
+  uint32_t mrnd;
   // WAVE
   plaits::WavetableEngine wt;
   char wtRam[256 * sizeof(void *) + 64];   // the wave map: 4 banks x 64 waves (Plaits allocates 64 and writes 256)
   float scan;
   uint32_t ringPh;
+  float wdrift, wdriftT, wtilt;
+  uint32_t wrnd;
   int wtWarm;   // a fresh wavetable engine plays a few silent frames first (its differentiator starts with a jump)
   // PHYS
   plaits::StringVoice str;
@@ -84,6 +89,11 @@ struct Mi {
   plaits::ModalVoice modal;
   int physModel;
   stmlib::Limiter lim;   // as Plaits does for its string and modal engines
+  float b1[3], b2[3];      // BODY: three resonances
+  float strike, pstrike, nz;
+  uint32_t prnd;
+  float comb[2048];
+  int cw;
   float temp[32], aux[32], o[32];
 };
 
@@ -93,6 +103,10 @@ void reset_macro(Mi *m) {
   m->hb.Init();
   m->fifoLen = m->fifoPos = 0;
   m->menv = 0.f;
+  m->mstage = 2;
+  m->mhold = m->mholdPh = m->mdrift = m->mdriftT = m->tilt = 0.f;
+  m->mrnd = 0x1B873593u;
+  m->sigA = m->sigB = 0.f;
   memset(m->sync, 0, sizeof m->sync);
 }
 
@@ -102,6 +116,8 @@ void reset_wave(Mi *m) {
   m->wt.LoadUserData(NULL);
   m->scan = 0.f;
   m->ringPh = 0;
+  m->wdrift = m->wdriftT = m->wtilt = 0.f;
+  m->wrnd = 0x68E31DA4u;
   m->wtWarm = 1;
 }
 
@@ -111,21 +127,53 @@ void reset_phys(Mi *m) {
   m->modal.Init();
   m->physModel = -1;
   m->lim.Init();
+  memset(m->b1, 0, sizeof m->b1);
+  memset(m->b2, 0, sizeof m->b2);
+  m->strike = m->pstrike = m->nz = 0.f;
+  m->prnd = 0x4F1BBCDCu;
+  memset(m->comb, 0, sizeof m->comb);
+  m->cw = 0;
 }
 
 inline float clamp01(float v) { return v < 0.f ? 0.f : v > 1.f ? 1.f : v; }
 inline int zone_of(float v, int n) { int i = (int)(clamp01(v) * (float)n); return i >= n ? n - 1 : i; }
+inline uint32_t mrand(uint32_t *s) { uint32_t x = *s ? *s : 0x9E3779B9u; x ^= x << 13; x ^= x >> 17; x ^= x << 5; *s = x; return x; }
+inline float mbrand(uint32_t *s) { return (float)(mrand(s) >> 8) * (2.f / 16777216.f) - 1.f; }
+
+// BRIGHT (0.5 neutral): below, a low-pass closing; above, a high shelf lifting (a one-pole split)
+inline float tilt_eq(float *z, float x, float v) {
+  if (v > 0.49f && v < 0.51f) return x;
+  if (v < 0.5f) {
+    const float a = 1.f - expf(-6.2831853f * 300.f * exp2f(v * 2.f * 6.f) / 44100.f);
+    *z += a * (x - *z);
+    return *z;
+  }
+  const float a = 1.f - expf(-6.2831853f * 1500.f / 44100.f);
+  *z += a * (x - *z);
+  return x + (x - *z) * (v - 0.5f) * 3.f;
+}
 
 void render_macro(Mi *m, const EngIn *in, float *out, int n) {
   const int shape = zone_of(in->p[0], 44);
   if (shape != m->shape) { m->macro.set_shape(MACRO_SHAPES[shape]); m->shape = shape; }
   // the shape's envelope: TIMBRE ENV and COLOR ENV push from where TIMBRE and COLOR stand, ENV DECAY long or short
   const float dec = expf(-(float)n / ((0.01f + 2.5f * in->p[5] * in->p[5]) * 44100.f));
-  if (in->trig) { m->menv = 1.f; m->macro.Strike(); }
+  const float atk = (float)n / ((0.002f + 1.5f * in->p[6] * in->p[6]) * 44100.f);
+  if (in->trig) {
+    m->macro.Strike();
+    if (in->p[6] > 0.002f) { m->mstage = 1; m->menv = 0.f; } else { m->mstage = 2; m->menv = 1.f; }
+    m->sigA = mbrand(&m->mrnd); m->sigB = mbrand(&m->mrnd);   // SIGNATURE: each note's own small flaws
+  }
+  if (m->mstage == 1) { m->menv += atk; if (m->menv >= 1.f) { m->menv = 1.f; m->mstage = 2; } }
   const float t = clamp01(in->p[1] + in->p[3] * m->menv);
   const float c = clamp01(in->p[2] + in->p[4] * m->menv);
-  m->menv *= dec;
-  float note = in->note + kBraidsPitchOffset;
+  if (m->mstage == 2) m->menv *= dec;
+  // DRIFT: a slow random walk of the pitch
+  if (in->p[9] > 0.001f) {
+    m->mdriftT -= (float)n;
+    if (m->mdriftT <= 0.f) { m->mdriftT = 44100.f * 0.3f; m->mdrift += 0.5f * (mbrand(&m->mrnd) - m->mdrift); }
+  }
+  float note = in->note + kBraidsPitchOffset + in->p[9] * 0.3f * m->mdrift;
   if (note < 0.f) note = 0.f;
   if (note > 127.f) note = 127.f;
   m->macro.set_pitch((int16_t)(note * 128.f));
@@ -140,19 +188,38 @@ void render_macro(Mi *m, const EngIn *in, float *out, int n) {
     }
     out[k] = m->fifo[m->fifoPos++] * 1.1f;
   }
+  // after Braids: SIGNATURE, CRUSH, DOWNSAMPLE, BRIGHT
+  const float sig = in->p[10], crush = in->p[7], ds = in->p[8], br = in->p[11];
+  const float lv = exp2f(15.f - crush * 13.f), hz = 44100.f * exp2f(-ds * 6.f);
+  for (int k = 0; k < n; ++k) {
+    float x = out[k];
+    if (sig > 0.001f) x = x + sig * 0.25f * (m->sigA * x * x + m->sigB * 0.1f);
+    if (crush > 0.005f) x = floorf(x * lv + 0.5f) / lv;
+    if (ds > 0.005f) {
+      m->mholdPh += hz / 44100.f;
+      if (m->mholdPh >= 1.f) { m->mholdPh -= floorf(m->mholdPh); m->mhold = x; }
+      x = m->mhold;
+    }
+    out[k] = tilt_eq(&m->tilt, x, br);
+  }
 }
 
 void render_wave(Mi *m, const EngIn *in, float *out, int n) {
   plaits::EngineParameters p;
   bool enveloped = false;
   if (in->trig) m->scan = 1.f;
+  if (in->p[8] > 0.001f) {   // DRIFT: the position wanders
+    m->wdriftT -= (float)n;
+    if (m->wdriftT <= 0.f) { m->wdriftT = 44100.f * 0.4f; m->wdrift += 0.4f * (mbrand(&m->wrnd) - m->wdrift); }
+  }
   p.trigger = in->trig ? 1 : 0;   // (unused by the wavetable)
   p.note = in->note;
   p.harmonics = clamp01(in->p[0]) * 0.5f;   // the four banks (Plaits mirrors them past the middle)
-  p.timbre = clamp01(in->p[1] + in->p[5] * m->scan * 0.6f);
-  p.morph = clamp01(in->p[2]);
+  p.timbre = clamp01(in->p[1] + in->p[5] * m->scan * 0.6f + in->p[8] * 0.15f * m->wdrift);
+  p.morph = clamp01(in->p[2] + in->p[7] * m->scan * 0.6f);
   p.accent = in->accent;
-  m->scan *= expf(-(float)n / (0.6f * 44100.f));
+  const float scanEnv = m->scan;
+  m->scan *= expf(-(float)n / ((0.03f + 3.f * in->p[6] * in->p[6]) * 44100.f));
   if (m->wtWarm) {
     for (int w = 0; w < 6; ++w) { m->wt.Render(p, m->o, m->aux, 8, &enveloped); }
     m->wtWarm = 0;
@@ -162,9 +229,13 @@ void render_wave(Mi *m, const EngIn *in, float *out, int n) {
   for (int k = 0; k < n; ++k) out[k] *= 1.4f;
   // the warp, after the wavetable
   const int type = zone_of(in->p[3], 4);
-  const float a = clamp01(in->p[4]);
-  if (a < 0.001f) return;
-  const uint32_t ringInc = (uint32_t)(in->freq * 2.5f / 44100.f * 4294967296.f);
+  const float a = clamp01(in->p[4] + in->p[10] * scanEnv);
+  const float br = in->p[11];
+  if (a < 0.001f) {
+    if (br < 0.49f || br > 0.51f) for (int k = 0; k < n; ++k) out[k] = tilt_eq(&m->wtilt, out[k], br);
+    return;
+  }
+  const uint32_t ringInc = (uint32_t)(in->freq * (0.5f + 7.5f * in->p[9]) / 44100.f * 4294967296.f);
   for (int k = 0; k < n; ++k) {
     float x = out[k];
     switch (type) {
@@ -176,27 +247,65 @@ void render_wave(Mi *m, const EngIn *in, float *out, int n) {
         x *= 1.f - a + a * sinf(6.2831853f * (float)m->ringPh * (1.f / 4294967296.f));
         break;
     }
-    out[k] = x;
+    out[k] = tilt_eq(&m->wtilt, x, br);
   }
 }
 
 void render_phys(Mi *m, const EngIn *in, float *out, int n) {
   const int model = zone_of(in->p[0], 2);
   if (model != m->physModel) { m->physModel = model; }
-  const float f0 = in->freq / 44100.f;
+  if (in->trig) { m->strike = 1.f; m->pstrike = 1.f; }
+  const float bend = in->p[8] * in->p[8] * 12.f * m->pstrike;      // PITCH STRIKE: a bend down into the note
+  m->pstrike *= expf(-(float)n / (0.05f * 44100.f));
+  float freq = in->freq * exp2f(bend / 12.f);
+  if (freq > 15000.f) freq = 15000.f;
+  const float f0 = freq / 44100.f;
   const bool sustain = in->p[4] > 0.05f && in->gate;
   const float strength = clamp01(in->p[5]) * (0.6f + 0.4f * in->vel) + 0.25f * in->accent;
+  // MUTE: let go and the body is damped (by MUTE)
+  const float damp = in->gate ? clamp01(in->p[3]) : clamp01(in->p[3] + in->p[9] * (1.f - in->p[3]));
   memset(m->o, 0, sizeof(float) * (size_t)n);
   memset(m->aux, 0, sizeof(float) * (size_t)n);
   if (model == 0)
     m->str.Render(sustain, in->trig != 0, clamp01(strength), f0, clamp01(in->p[1]), clamp01(in->p[2]),
-                  clamp01(in->p[3]), m->temp, m->o, m->aux, (size_t)n);
+                  damp, m->temp, m->o, m->aux, (size_t)n);
   else
     m->modal.Render(sustain, in->trig != 0, clamp01(strength), f0, clamp01(in->p[1]), clamp01(in->p[2]),
-                    clamp01(in->p[3]), m->temp, m->o, m->aux, (size_t)n);
+                    damp, m->temp, m->o, m->aux, (size_t)n);
   // the exciter is heard a little with the body (Plaits' aux), more as EXCITER goes up
   const float ex = 0.15f + 0.35f * clamp01(in->p[4]);
-  for (int k = 0; k < n; ++k) out[k] = m->o[k] + ex * m->aux[k];
+  const float body = in->p[6], noise = in->p[7], symp = in->p[10], drive = in->p[11];
+  static const float BF[3] = {110.f, 240.f, 520.f};
+  const float sdec = expf(-1.f / (0.02f * 44100.f));
+  int clen = (int)(44100.f / (freq * 2.f));
+  if (clen < 8) clen = 8;
+  if (clen > 2047) clen = 2047;
+  for (int k = 0; k < n; ++k) {
+    float x = m->o[k] + ex * m->aux[k];
+    if (noise > 0.001f && m->strike > 0.0005f) { x += noise * 0.6f * m->strike * mbrand(&m->prnd); m->strike *= sdec; }
+    if (body > 0.001f) {   // BODY: a wooden box's three resonances under the string
+      float b = 0.f;
+      for (int j = 0; j < 3; ++j) {
+        const float g = tanf(3.14159265f * BF[j] / 44100.f), kk = 1.f / 4.f;
+        const float hp = (x - (kk + g) * m->b1[j] - m->b2[j]) / (1.f + kk * g + g * g);
+        const float bp = g * hp + m->b1[j];
+        const float lp = g * bp + m->b2[j];
+        m->b1[j] = g * hp + bp;
+        m->b2[j] = g * bp + lp;
+        b += bp * kk;
+      }
+      x += body * 2.5f * b;
+    }
+    if (symp > 0.001f) {   // SYMPATHETIC: a string an octave up ringing along
+      const int r = (m->cw - clen) & 2047;
+      const float y = x + symp * 0.85f * m->comb[r];
+      m->comb[m->cw] = y;
+      m->cw = (m->cw + 1) & 2047;
+      x = x + symp * 0.5f * m->comb[r];
+    }
+    if (drive > 0.001f) x = tanhf(x * (1.f + drive * 6.f)) / (1.f + drive * 2.f) * (1.f + drive);
+    out[k] = x;
+  }
   m->lim.Process(3.5f, out, (size_t)n);
 }
 

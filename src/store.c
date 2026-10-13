@@ -10,8 +10,8 @@
 
 /* 0.1.0's layout (version 1): each voice's six sliders only, no STEP RANDOM settings, no velocities */
 typedef struct {
-    float v[SP_COUNT_V1];
-    float mem[NUM_ENGINES][ENG_SLIDERS];
+    float v[SP_COUNT_V1];                        /* in 0.1.0's order (SP_FROM_V1) */
+    float mem[NUM_ENGINES_V1][ENG_SLIDERS_V1];
 } SoundV1;
 typedef struct {
     SoundV1 snd[NUM_TRACKS];
@@ -32,10 +32,14 @@ static void from_v1(Project *np, const ProjectV1 *o)
     int t, e, k;
     bl_initProject(np);
     for (t = 0; t < NUM_TRACKS; t++) {
+        static const int MAP[SP_COUNT_V1] = SP_FROM_V1;
         Sound *s = &np->snd[t];
-        for (e = 0; e < NUM_ENGINES; e++)   /* each voice: its home sound with the sliders the track had */
-            for (k = 0; k < ENG_SLIDERS; k++) s->full[e][SP_V1 + k] = o->snd[t].mem[e][k];
-        memcpy(s->v, o->snd[t].v, sizeof o->snd[t].v);   /* the voice in use: exactly as it was */
+        for (e = 0; e < NUM_ENGINES_V1; e++) {   /* each voice: its home sound with the sliders the track had */
+            for (k = 0; k < ENG_SLIDERS_V1; k++) s->full[e][SP_V1 + k] = o->snd[t].mem[e][k];
+            eng_upgrade(e, &s->full[e][SP_V1]);
+        }
+        for (k = 0; k < SP_COUNT_V1; k++) s->v[MAP[k]] = o->snd[t].v[k];   /* the voice in use: exactly as it was */
+        eng_upgrade((int)(s->v[SP_VOICE] + 0.5f) % NUM_ENGINES_V1, &s->v[SP_V1]);
         /* 0.1.0's VCA ENV fully down held the note: that is SUSTAIN 100 %; any other decayed it away: SUSTAIN 0 */
         s->v[SP_SUSTAIN] = s->v[SP_VCA_DEC] <= 0.02f ? 1.f : 0.f;
     }
@@ -127,6 +131,10 @@ int store_deserialize(Bl *x, const char *text)
             if (r->lenOpt > 7) r->lenOpt = 3;
             if (r->vel >= RV_COUNT) r->vel = RV_GROOVE;
             if (r->style >= RS_COUNT) r->style = RS_AUTO;
+        }
+        {
+            int e2;
+            for (e2 = 0; e2 < NUM_ENGINES; e2++) if (np->starter[t][e2] >= NUM_STARTER_SOUNDS) np->starter[t][e2] = 0;
         }
     }
     for (i = 0; i < NUM_PATTERNS; i++)

@@ -141,7 +141,7 @@ static void set_param(void *p, const char *k, const char *v)
         case PK_SOUND: {
             Sound *snd = &x->p.snd[x->ui.track];
             if (m->id == SP_VOICE) sound_setVoice(snd, (int)read_value(m, v));
-            else if (m->id >= SP_V1 && m->id <= SP_V6) sound_setSlider(snd, m->id - SP_V1, read_value(m, v));
+            else if (m->id >= SP_V1 && m->id <= SP_V20) sound_setSlider(snd, m->id - SP_V1, read_value(m, v));
             else { snd->v[m->id] = read_value(m, v); sound_sync(snd); }
             ui_soundTouched(x, m->id);
             break;
@@ -155,7 +155,7 @@ static void set_param(void *p, const char *k, const char *v)
             else if (m->id == UI_SLOT) preset_slot(x, (int)read_value(m, v));
             else if (m->id == UI_TIMBRE || m->id == UI_MORPH) {   /* the voice's slider behind the front knob */
                 Sound *snd = &x->p.snd[x->ui.track];
-                const int k = ENG_MACROS[(int)(snd->v[SP_VOICE] + 0.5f) % NUM_ENGINES][m->id == UI_MORPH];
+                const int k = ENG_DEFS[(int)(snd->v[SP_VOICE] + 0.5f) % NUM_ENGINES].macro[m->id == UI_MORPH];
                 sound_setSlider(snd, k, read_value(m, v));
                 ui_soundTouched(x, SP_V1 + k);
             }
@@ -239,7 +239,7 @@ static int get_param(void *p, const char *k, char *buf, int n)
             else if (m->id == UI_SRND_AMT) snprintf(t, sizeof t, "%d", x->rnd2.seqAmt);
             else if (m->id == UI_TIMBRE || m->id == UI_MORPH) {
                 const Sound *snd = &x->p.snd[x->ui.track];
-                const int k = ENG_MACROS[(int)(snd->v[SP_VOICE] + 0.5f) % NUM_ENGINES][m->id == UI_MORPH];
+                const int k = ENG_DEFS[(int)(snd->v[SP_VOICE] + 0.5f) % NUM_ENGINES].macro[m->id == UI_MORPH];
                 snprintf(t, sizeof t, "%.5f", snd->v[SP_V1 + k]);
             }
             else snprintf(t, sizeof t, "%.5f", ui_knobGet(x, m->id == UI_SEL ? 0 : 1));
@@ -256,6 +256,10 @@ static int get_param(void *p, const char *k, char *buf, int n)
             uint8_t dots;
             if (on) return 0;
             if (m->id == SH_READOUT) { char ro[96]; ui_readout(x, ro, sizeof ro); return put(buf, n, ro); }
+            if (m->id == SH_SNDNAME) {
+                const int ty = (int)(x->p.snd[x->ui.track].v[SP_VOICE] + 0.5f) % NUM_ENGINES;
+                return put(buf, n, sound_starterName(ty, x->p.starter[x->ui.track][ty]));
+            }
             ui_display(x, d, &dots);
             if (m->id <= SH_DISP3) {
                 const char *g = strchr(GLYPHS, d[m->id - SH_DISP1]);

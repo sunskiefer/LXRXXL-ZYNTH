@@ -30,7 +30,7 @@ static float unit(Bl *x) { return (float)(next(x) >> 40) / (float)(1u << 24); } 
 static int skip(int sp)
 {
     return sp == SP_VOICE || sp == SP_LEVEL || sp == SP_PAN || sp == SP_MOD_SYNC || sp == SP_SW_MODE ||
-           (sp >= SP_V1 && sp <= SP_V6);
+           (sp >= SP_V1 && sp <= SP_V20);
 }
 
 /* C: the range a value may land in at amount a (0..1) */
@@ -147,6 +147,7 @@ static const char *one_track(Bl *x, int t, float a)
     /* A: the voice's own six sliders */
     for (i = 0; i < ENG_SLIDERS; i++) {
         const int st = ENG_DEFS[type].steps[i], k = SP_V1 + i;
+        if (i == PR_OCT || i == PR_FINE) continue;   /* the play row's tuning stays */
         const float was = s->v[k];
         if (st > 1) {
             if (unit(x) < 0.7f * a) {

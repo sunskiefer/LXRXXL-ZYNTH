@@ -43,7 +43,7 @@ typedef struct {
 } Pattern;
 
 typedef struct {
-    float v[SP_COUNT];  /* 0..1, or an option's index; v[SP_V1..SP_V6]: the six sliders of the voice in use */
+    float v[SP_COUNT];  /* 0..1, or an option's index; v[SP_V1..SP_V20]: the twenty controls of the voice in use */
     float full[NUM_ENGINES][SP_COUNT];   /* each voice's whole sound as last left on this track (its home sound until
                                             then): switching back finds it; LEVEL and PAN stay the track's */
 } Sound;
@@ -88,6 +88,8 @@ typedef struct {
     Harmony harm[NUM_PATTERNS];
     RndSet rset[NUM_TRACKS];
     uint8_t vel[NUM_PATTERNS][NUM_TRACKS][NUM_STEPS];
+    uint8_t starter[NUM_TRACKS][NUM_ENGINES];   /* each track's starter sound per voice (the VOICE page's SOUND) */
+    uint8_t pad3[(4 - (NUM_TRACKS * NUM_ENGINES) % 4) % 4];
 } Project;
 
 /* ---------------------------------------------------------------- the voice (voice.c) */
@@ -106,6 +108,10 @@ typedef struct {
     /* envelopes */
     float aenv, fenv;                /* amp, filter */
     uint8_t aStage, fStage;          /* 0 off, 1 attack, 2 decay */
+    /* the VOICE page's play row: the modulation envelope (attack, decay) and the vibrato */
+    float menv;
+    uint8_t menvStage;
+    float vibPh, vibAmt;
     uint8_t gate;
     float accent;                    /* this note's accent 0..1 */
     float sweep;                     /* the accent sweep's charge */
@@ -263,6 +269,9 @@ void sound_setSlider(Sound *s, int k, float v);   /* V1..V6: the voice in use's 
 void sound_resetVoice(Sound *s, int type);    /* every slider of that voice back to its default */
 void sound_sync(Sound *s);                    /* v[] written into the voice in use's memory */
 void sound_home(int type, float *v);          /* a voice's home sound: the chain set so the voice sounds as itself */
+void sound_starter(Sound *s, int type, int idx);   /* a voice's starter sound (0: the home sound) */
+const char *sound_starterName(int type, int idx);
+#define NUM_STARTER_SOUNDS 8
 
 /* random.c */
 const char *rnd_sounds(Bl *x, int pct, int track);   /* SOUND RANDOM: one track, or every track (track < 0); the

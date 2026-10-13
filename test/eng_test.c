@@ -124,7 +124,8 @@ int main(int argc, char **argv)
         float peak, rms, f0;
         int bad;
         const float note = 57.f;   /* A3, 220 Hz */
-        const int pitched = t != ENG_NOISE && t != ENG_GRAIN && t != ENG_LXR_METAL && t != ENG_CHIP;
+        const int pitched = t != ENG_NOISE && t != ENG_GRAIN && t != ENG_LXR_METAL && t != ENG_CHIP && t != ENG_TEXTURE &&
+                            t != ENG_FX;
         render(t, ENG_DEFS[t].def, note, LEN, &peak, &rms, &bad);
         f0 = pitch_of();
         if (argc > 1) {
@@ -141,12 +142,59 @@ int main(int argc, char **argv)
             if (pitchBad) fails++;
         }
     }
+    /* 0.1.0's sounds: the new controls at their upgrade values change nothing (the same samples as at the defaults
+     * of 0.1.0, i.e. V7..V20 = up[]) -- checked as: upgrade(def) == def for every voice of 0.1.0 */
+    for (t = 0; t < NUM_ENGINES_V1; t++) {
+        float p[ENG_SLIDERS];
+        int i;
+        memcpy(p, ENG_DEFS[t].def, sizeof p);
+        eng_upgrade(t, p);
+        for (i = 0; i < ENG_SLIDERS; i++)
+            if (fabsf(p[i] - ENG_DEFS[t].def[i]) > 1e-4f && ENG_DEFS[t].upCopy[i] < 0) {
+                printf("%s: control %d upgrades to %.3f, its default is %.3f\n", ENG_DEFS[t].name, i + 1, p[i], ENG_DEFS[t].def[i]);
+            }
+    }
+    /* every voice's deeper controls (V7..V12) change its sound: the default against the control moved */
+    {
+        static float ref[LEN / 2];
+        for (t = 0; t < NUM_ENGINES; t++) {
+            int c;
+            float peak, rms;
+            int bad;
+            render(t, ENG_DEFS[t].def, 57.f, LEN / 2, &peak, &rms, &bad);
+            memcpy(ref, buf, sizeof ref);
+            for (c = 6; c < ENG_DEEP; c++) {
+                float p[ENG_SLIDERS];
+                double d = 0, e2 = 0;
+                int i;
+                /* the controls that work through another: that one set first (in the reference too) */
+                static const struct { int t, c, dep; float v; } DEPS[] = {
+                    {ENG_ANALOG, 7, 0, 1.f}, {ENG_ANALOG, 8, 7, .8f}, {ENG_ANALOG, 8, 0, 1.f}, {ENG_PHASE, 6, 5, .8f},
+                    {ENG_PHASE, 9, 5, .8f}, {ENG_WAVE, 9, 3, .9f}, {ENG_WAVE, 9, 4, .8f}, {ENG_CHIP, 7, 3, .3f},
+                    {ENG_CHIP, 8, 3, .3f}, {ENG_NOISE, 8, 7, .9f}, {ENG_LXR_TONE, 7, 6, .7f}, {ENG_BAZZ, 7, 6, .8f},
+                    {ENG_BAZZ, 8, 6, .8f}, {ENG_FX, 6, 5, .8f}};
+                int dd, any = 0;
+                memcpy(p, ENG_DEFS[t].def, sizeof p);
+                for (dd = 0; dd < (int)(sizeof DEPS / sizeof DEPS[0]); dd++)
+                    if (DEPS[dd].t == t && DEPS[dd].c == c) { p[DEPS[dd].dep] = DEPS[dd].v; any = 1; }
+                if (any) { render(t, p, 57.f, LEN / 2, &peak, &rms, &bad); memcpy(ref, buf, sizeof ref); }
+                p[c] = p[c] > 0.5f ? 0.05f : 0.95f;
+                render(t, p, 57.f, LEN / 2, &peak, &rms, &bad);
+                for (i = 0; i < LEN / 2; i++) { d += (double)(buf[i] - ref[i]) * (buf[i] - ref[i]); e2 += (double)ref[i] * ref[i]; }
+                if (any) { render(t, ENG_DEFS[t].def, 57.f, LEN / 2, &peak, &rms, &bad); memcpy(ref, buf, sizeof ref); }
+                if (bad || !(d > 1e-4 * e2 + 1e-9)) {
+                    printf("%s: %s does nothing (%.2e of %.2e)%s\n", ENG_DEFS[t].name, ENG_DEFS[t].slider[c], d, e2, bad ? " NaN" : "");
+                    fails++;
+                }
+            }
+        }
+    }
     /* random settings and notes: nothing may blow up */
-    for (r = 0; r < 400; r++) {
-        float p[6], peak, rms;
+    for (r = 0; r < 1140; r++) {
+        float p[ENG_SLIDERS], peak, rms;
         int bad, i;
         t = r % NUM_ENGINES;
-        for (i = 0; i < 6; i++) { seed = seed * 1664525u + 1013904223u; p[i] = (seed >> 8) / 16777216.f; }
+        for (i = 0; i < ENG_SLIDERS; i++) { seed = seed * 1664525u + 1013904223u; p[i] = (seed >> 8) / 16777216.f; }
         seed = seed * 1664525u + 1013904223u;
         render(t, p, 12.f + (float)((seed >> 8) % 100), SRI / 4, &peak, &rms, &bad);
         if (bad || peak > 8.f) {

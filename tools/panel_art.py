@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the three pages of LXRXXL ZYNTH's skin from the artwork (art/panel/), into the skin mpc-vst-plugins made
+"""Build the four pages of LXRXXL ZYNTH's skin from the artwork (art/panel/), into the skin mpc-vst-plugins made
 from layout.conf (which only gave the tabs and their Q-Links).
 
     python3 tools/panel_art.py "<skin dir>/Plugin Skins"
@@ -32,6 +32,7 @@ from scipy import ndimage
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import panel as P  # noqa: E402
 import gen_params  # noqa: E402
+import voices  # noqa: E402
 
 FONT = os.path.join(P.ROOT, "art", "fonts", "DSEG14Classic-Italic.ttf")
 LABEL_FONT = os.path.join(P.ROOT, "art", "fonts", "Michroma-Regular.ttf")
@@ -209,17 +210,41 @@ def reset_key_art(img, lit):
     return img
 
 
+def modules_clean(masks):
+    """modules_bg.png with what is reprinted or moved wiped (artwork pixels), and masks"""
+    img = art("modules_bg.png")
+    img = relabel(img)
+    for _, (x0, y0, x1, y1), *_ in P.MODULES_REPRINT + P.MODULES_REPRINT2:   # reprinted bigger on the page
+        img = clean_patch(img, (x0 - 3, y0 - 3, x1 - x0 + 6, y1 - y0 + 6))
+    for r in P.MODULES_WIPE:   # the title (the VOICE selector's place) and OSC MODE's legends
+        img = clean_patch(img, r)
+    for m in masks:
+        img = clean_patch(img, m)
+    return img
+
+
+def compose(tab):
+    """the VOICE and FX MOD pictures, put together from modules_bg.png (panel.py)"""
+    if tab == 1:
+        mb = modules_clean([(383, 395, 94, 20), (0, 414, 1000, 4)])
+        out = Image.new("RGBA", (P.ART_W, 456), FINISH + (255,))
+        out.paste(mb.crop((0, 0, P.ART_W, 242)), (0, 0))
+        out.paste(mb.crop((0, 32, P.ART_W, 245)), (0, 242))   # the faders again, a row lower
+        c, _ = clean_modules()
+        x, y, w, h = P.VOICE_CENTRE   # the copied ACCENT column: the clean circuit instead
+        out.paste(c.crop((x, 40, x + w, 40 + h)), (x, y))
+        return out
+    top = modules_clean([(0, 395, 385, 24), (475, 395, 525, 24)])   # the delay: the modules' last labels wiped
+    low = modules_clean([(383, 395, 94, 20), (0, 414, 1000, 4)])    # the modules: the delay's first labels wiped
+    out = Image.new("RGBA", (P.ART_W, 400), FINISH + (255,))
+    out.paste(top.crop((0, 395, P.ART_W, 625)), (0, 0))
+    out.paste(low.crop((0, 248, P.ART_W, 418)), (0, 230))
+    return out
+
+
 def make_background(tab):
     pic, (cx0, cy0, cx1, cy1), sx, sy = P.PAGES[tab]
-    bg_art = art(pic)
-    for m in P.MASKS.get(tab, []):
-        bg_art = clean_patch(bg_art, m)
-    if tab == 1:
-        bg_art = relabel(bg_art)
-        for (x0, y0, x1, y1), *_ in P.MODULES_REPRINT + P.MODULES_REPRINT2:   # reprinted bigger on the page
-            bg_art = clean_patch(bg_art, (x0 - 3, y0 - 3, x1 - x0 + 6, y1 - y0 + 6))
-        for r in P.MODULES_WIPE:   # the title (the VOICE selector's place) and OSC MODE's legends
-            bg_art = clean_patch(bg_art, r)
+    bg_art = compose(tab) if pic in ("voice", "fxmod") else art(pic)
     if tab == 0:
         bg_art = reset_key_art(bg_art, False)   # the VOICE RESET button on its bezel, unlit
         # the display window: cleared (the live characters are pictures over it)
@@ -256,18 +281,30 @@ def make_background(tab):
             pic = art(name)
             pic = pic.resize((w, R(pic.size[1] * w / pic.size[0])), Image.LANCZOS)
             page.alpha_composite(pic, (R(cx - pic.size[0] / 2), R(cy - pic.size[1] / 2)))
-    if tab == 1:
-        label(d, P.VOICE_LABEL, "VOICE", 17)
-        for rect, txt, px in P.MODULES_LABELS:   # as the page's printed legends: pale letters with an ice glow
-            printed_label(page, rect, txt, px)
-        for (x0, y0, x1, y1), txt, c, cap in P.MODULES_REPRINT:
+    if tab in (1, 2):
+        mv = (lambda y: y) if tab == 1 else P.mods
+        for t_, rect, txt, px in P.MODULES_LABELS:   # as the page's printed legends: pale letters with an ice glow
+            if t_ == tab:
+                printed_label(page, rect, txt, px)
+        for t_, (x0, y0, x1, y1), txt, c, cap in P.MODULES_REPRINT:
+            if t_ != tab:
+                continue
             cx, cy = c if c else ((x0 + x1) / 2, (y0 + y1) / 2)
-            px_, py_ = P.page(tab, cx, cy)
+            px_, py_ = P.page(tab, cx, mv(cy))
             printed_label(page, (px_ - 80, py_ - 9, 160, 18), txt, cap)
-        for (x0, y0, x1, y1), lines, (cx, cy), cap in P.MODULES_REPRINT2:
-            px_, py_ = P.page(tab, cx, cy)
+        for t_, (x0, y0, x1, y1), lines, (cx, cy), cap in P.MODULES_REPRINT2:
+            if t_ != tab:
+                continue
+            px_, py_ = P.page(tab, cx, mv(cy))
             for i, txt in enumerate(lines):
                 printed_label(page, (px_ - 60, py_ - 8 + (i - 0.5) * (cap + 5), 120, 16), txt, cap)
+    if tab == 1:
+        label(d, P.VOICE_LABEL, "VOICE", 17)
+        for (x, y, w, h), txt, px in P.PITCH_LABELS:
+            for i, line in enumerate(txt.split("|")):
+                printed_label(page, (x, y + i * (px + 5), w, h), line, px)
+        printed_label(page, P.SOUND_LABEL, "SOUND", 12)
+        window(d, P.SOUND_NAME, 6)
         for rect in P.LABEL_WINDOWS:   # under the voice's labels (pictures, one per voice)
             window(d, rect, 5)
         for rect, txt in P.FIXED_WINDOWS:   # the envelope's, LEVEL's and PAN's legends in the same windows
@@ -276,8 +313,9 @@ def make_background(tab):
             im = page.crop((x, y, x + w, y + h))
             window_label(im, txt)
             page.paste(im, (x, y))
-    if tab == 2:
+    if tab == 3:
         build_mixer_bg(page)
+    if tab == 2:
         # the presets' legends, in the display's orange (as drawn by Suns Kiefer's mockup)
         for key, gx, gy, txt, lx, ly in P.PRESET_KEYS:
             label(d, (lx - 40, ly - 9, 80, 18), txt, 15, fill=LIT)
@@ -288,19 +326,19 @@ def make_background(tab):
 
 def build_mixer_bg(page):
     y0 = P.MIXER_Y
-    page.alpha_composite(circuit_texture(P.W, P.H - y0), (0, y0))
     d = ImageDraw.Draw(page)
-    d.line([(0, y0), (P.W, y0)], fill=(60, 60, 60, 255), width=2)
+    bottom = P.READOUT[3][1] - 6
     for i, x0 in enumerate(P.MIX_STRIPS + [P.MASTER_X]):
         if i:
-            d.line([(x0 - 2, y0 + 8), (x0 - 2, P.H - 8)], fill=(44, 44, 44, 255), width=2)
+            d.line([(x0 - 2, y0 + 8), (x0 - 2, bottom)], fill=(60, 66, 70, 255), width=2)
     for i, x0 in enumerate(P.MIX_STRIPS):
         M = P.MIX
         nx, ny, nw, nh = M["num"]
         page.alpha_composite(lit_text(str(i + 1), nw, nh, fit_font("8", nw - 6, nh - 6)), (x0 + nx, y0 + ny))
-        for k, txt in (("pan_label", "PAN"), ("snd_label", "DLY SEND"), ("lvl_label", "LEVEL")):
+        for k, txt in (("pan_label", "PAN"), ("snd_label", "DLY SEND"), ("lvl_label", "LEVEL"), ("mute_label", "MUTE"),
+                       ("solo_label", "SOLO")):
             x, y, w, h = M[k]
-            label(d, (x0 + x, y0 + y, w, h), txt, 11)
+            printed_label(page, (x0 + x, y0 + y, w, h), txt, 11)
         for k in ("pan", "snd"):
             cx, cy, s = M[k]
             rl = ring_layer(s)
@@ -308,7 +346,7 @@ def build_mixer_bg(page):
         fx, fy, fw, fh = M["fader"]
         page.alpha_composite(fader_box(fw, fh), (x0 + fx, y0 + fy))
     x, y, w, h = P.MIX_MASTER["label"]
-    label(d, (x, y0 + y, w, h), "MASTER", 15)
+    printed_label(page, (x, y0 + y, w, h), "MASTER", 14)
     fx, fy, fw, fh = P.MIX_MASTER["fader"]
     page.alpha_composite(fader_box(fw, fh), (fx, y0 + fy))
 
@@ -319,16 +357,27 @@ FADER_CHANNEL = (13, 16, 12, 151)     # x, y, w, h inside the box
 
 
 def fader_box(w, h):
+    """the artwork's slider box at w x h: its ends kept, its middle stretched (it does not look pulled)"""
     x, y, bw, bh = FADER_BOX
-    return art("modules_bg.png").crop((x, y, x + bw, y + bh)).resize((w, h), Image.LANCZOS)
+    src = art("modules_bg.png").crop((x, y, x + bw, y + bh))
+    k = w / bw
+    end = 18
+    top = src.crop((0, 0, bw, end)).resize((w, R(end * k)), Image.LANCZOS)
+    bot = src.crop((0, bh - end, bw, bh)).resize((w, R(end * k)), Image.LANCZOS)
+    mid = src.crop((0, end, bw, bh - end)).resize((w, max(1, h - top.height - bot.height)), Image.LANCZOS)
+    out = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    out.paste(top, (0, 0))
+    out.paste(mid, (0, top.height))
+    out.paste(bot, (0, h - bot.height))
+    return out
 
 
 def fader_travel(w, h):
     """the cap's centre's y range inside a fader box of w x h"""
     _, _, bw, bh = FADER_BOX
     cx, cy, cw, ch = FADER_CHANNEL
-    k = h / bh
-    return cy * k, (cy + ch) * k
+    k = w / bw
+    return cy * k, h - (bh - cy - ch) * k
 
 
 # ------------------------------------------------------------------------------------------------ the display font
@@ -475,18 +524,8 @@ def round_alpha(img):
 
 # ------------------------------------------------------------------------------------------------ the voices' labels
 def voice_labels():
-    """each voice's six label-window texts, read from src/engines.c (ENG_DEFS: the second list, "A|B" = two lines)"""
-    import re
-    src = open(os.path.join(P.ROOT, "src", "engines.c")).read()
-    out = []
-    for name in gen_params.VOICES:
-        m = re.search(r'\{"%s", "[^"]*", \{[^}]*\},\s*\{([^}]*)\}' % re.escape(name), src)
-        if not m:
-            raise SystemExit("panel_art: no labels for %s in src/engines.c" % name)
-        out.append(re.findall(r'"([^"]*)"', m.group(1)))
-        if len(out[-1]) != 6:
-            raise SystemExit("panel_art: %s has %d labels" % (name, len(out[-1])))
-    return out
+    """each voice's twenty label-window texts (tools/voices.py, "A|B" = two lines)"""
+    return voices.labels()
 
 
 def window_label(im, text):
@@ -665,7 +704,7 @@ def build_page(sk, tab):
     """(the page's background, its components)"""
     bg = make_background(tab)
     kids = []
-    t = "fmx"[tab]
+    t = "fmxz"[tab]
     sx, sy = P.scale(tab)
     seen_focus = set()
 
@@ -743,7 +782,7 @@ def build_page(sk, tab):
         if st_tab == tab:
             radio(key, [prect(tab, *z) for z in zones], lambda i, img, rect, th=thumbs: thumb_at(img, rect, th[i], sw_pic), lab="sw")
 
-    if tab == 1:
+    if tab == 2:
         src = art("modules_bg.png")
         hs = {h[0]: h for h in P.HSLIDERS}
         for key, bx, by, bw, bh, n in P.BARS:
@@ -761,36 +800,12 @@ def build_page(sk, tab):
             sw_ = (hx1 - hx0 + 8) / n
             radio(key, [prect(tab, hx0 - 4 + i * sw_, hy - 10, sw_, 20) for i in range(n)],
                   lambda i, img, rect, thumbs=thumbs: thumb_at(img, rect, thumbs[i], sl_pic), lab="hs")
-        labs = {k: v for k, v in P.LABEL_OPTS}
-        for key, x, y0, y1 in P.VSLIDERS:
-            n = sk.opts(key)
-            if not n:
-                continue
-            step = (y1 - y0) / n
-            thumbs = [(x, y0 + 8.5 + i * (y1 - y0 - 17) / (n - 1)) for i in range(n)]
-            if key == "osc_mode":
-                zones = [prect(tab, 0, y0 - 14, 72, step + 14)] + [prect(tab, 0, y0 + i * step, 72, step) for i in range(1, n)]
-                looks = bar_looks(src, labs["osc_mode"])
-            else:
-                zones = [prect(tab, x - 22, y0 + i * step, 44, step) for i in range(n)]
-                looks = None
-
-            def on_draw(i, img, rect, thumbs=thumbs, looks=looks, key=key):
-                if looks:
-                    paste_look(img, rect, labs[key][i], looks[i][1])
-                thumb_at(img, rect, thumbs[i], sl_pic)
-
-            def off_draw(i, img, rect, looks=looks, key=key):
-                if looks:
-                    paste_look(img, rect, labs[key][i], looks[i][0])
-
-            radio(key, zones, on_draw, off_draw, lab="v")
         # FREE / TEMPO
         sxx, sy0, sy1 = P.SYNC_SLOT
-        zones = [prect(tab, 938, 285, 54, 64), prect(tab, 938, 349, 54, 60)]
+        zones = [prect(tab, *z) for z in P.SYNC_ZONES]
         thumbs = [(sxx, sy0 + 6), (sxx, sy1 - 6)]
         sync_words = sk.opt_names("mod_sync")
-        sync_cells = [prect(tab, 936, 290, 50, 18), prect(tab, 934, 388, 54, 16)]
+        sync_cells = [prect(tab, *z) for z in P.SYNC_CELLS]
         radio("mod_sync", zones,
               lambda i, img, rect: (word_cell(img, rect, sync_cells[i], sync_words[i], True), thumb_at(img, rect, thumbs[i], sync_pic)),
               lambda i, img, rect: word_cell(img, rect, sync_cells[i], sync_words[i], False), lab="sync")
@@ -853,7 +868,7 @@ def build_page(sk, tab):
 
     # ---- the VOICE keys (MODULES): < and >, round grey keys with an ice arrow (lit while pressed)
     if tab == 1:
-        for key, cx, cy, size in P.VOICE_KEYS:
+        for key, cx, cy, size in P.VOICE_KEYS + P.SOUND_KEYS:
             box = size + 12
             tw, th = P.VOICE_KEY_TOUCH   # the touch area: wider than the key's picture
             rect = (R(cx - tw / 2), R(cy - th / 2), tw, th)
@@ -866,7 +881,7 @@ def build_page(sk, tab):
                 dd.ellipse([c - r, c - r, c + r, c + r], fill=(38, 42, 46, 255) if not lit_ else (30, 52, 64, 255),
                            outline=(110, 118, 124, 255), width=2 * SS)
                 a = size * SS * 0.24
-                pts = [(c - a, c), (c + a * 0.8, c - a), (c + a * 0.8, c + a)] if key == "v_prev" else \
+                pts = [(c - a, c), (c + a * 0.8, c - a), (c + a * 0.8, c + a)] if key.endswith("prev") else \
                       [(c + a, c), (c - a * 0.8, c - a), (c - a * 0.8, c + a)]
                 dd.polygon(pts, fill=LIT + (255,) if lit_ else (150, 175, 188, 255))
                 small = big_.resize((box, box), Image.LANCZOS)
@@ -945,9 +960,15 @@ def build_page(sk, tab):
         dkey = "bzReadout_%d" % h
         sk.defs.append(definition(dkey, [], [value_label(rect[2], rect[3], px)], ignore=True))
         kids.append(placed(dkey, "readout", sk.index["readout"], rect, False))
+    # ---- VOICE: the SOUND's name (MPC's text)
+    if tab == 1:
+        x, y, w, h = P.SOUND_NAME
+        rect = (x + 6, y + 4, w - 12, h - 8)
+        sk.defs.append(definition("zySoundName", [], [value_label(rect[2], rect[3], 22)], ignore=True))
+        kids.append(placed("zySoundName", "snd_name", sk.index["snd_name"], rect, False))
 
-    # ---- the mixer (FX MIXER)
-    if tab == 2:
+    # ---- the mixer (MIXER)
+    if tab == 3:
         build_mixer(sk, bg, kids, place, knob, thumb)
 
     # ---- the PANEL's characters
@@ -975,8 +996,12 @@ def build_page(sk, tab):
 def build_mixer(sk, bg, kids, place, knob, thumb):
     y0 = P.MIXER_Y
     M = P.MIX
-    unlit = round_alpha(art("front_bg.png").crop((899 - 24, 51 - 24, 899 + 24, 51 + 24)))   # LINK's unlit glass
-    lit = recolour(art("btn_lit_small.png"), LIT)
+    # MUTE and SOLO: the step keys' look and size (the front panel's first step key, unlit and lit)
+    fb = art("front_bg.png")
+    step_off = fb.crop((39 - 27, 545 - 30, 39 + 27, 545 + 30))
+    step_lit = step_off.copy()
+    lb = recolour(art("btn_lit_big.png"), LIT)
+    step_lit.alpha_composite(lb, ((step_off.width - lb.width) // 2, (step_off.height - lb.height) // 2))
 
     def fader(key, rect):
         x, y, w, h = rect
@@ -989,16 +1014,12 @@ def build_mixer(sk, bg, kids, place, knob, thumb):
 
     def mkey(key, rect, txt):
         x, y, w, h = rect
-        d = 30
         off = bg.crop((x, y, x + w, y + h)).convert("RGBA")
         on = off.copy()
-        gx, gy = (w - d) // 2, 2
-        off.alpha_composite(unlit.resize((d, d), Image.LANCZOS), (gx, gy))
-        on.alpha_composite(lit.resize((d + 2, d + 2), Image.LANCZOS), (gx - 1, gy - 1))
-        for im in (off, on):
-            label(ImageDraw.Draw(im), (0, gy + d + 2, w, h - gy - d - 2), txt, 11)
-        on_n = sk.save(on, "bz_x_key_%s_on.png" % key)
-        off_n = sk.save(off, "bz_x_key_%s_off.png" % key)
+        off.alpha_composite(step_off.resize((w, h), Image.LANCZOS))
+        on.alpha_composite(step_lit.resize((w, h), Image.LANCZOS))
+        on_n = sk.save(on, "zy_z_key_%s_on.png" % key)
+        off_n = sk.save(off, "zy_z_key_%s_off.png" % key)
         dkey = "bzKey_%s" % key
         sk.defs.append(definition(dkey, KEY_ACTIONS, [focus(w, h), button(on_n, off_n, 1, 1, w, h)]))
         place(dkey, key, key, rect)
