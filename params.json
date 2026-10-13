@@ -1614,6 +1614,181 @@
    "default": 0.3,
    "min": 0,
    "max": 1
+  },
+  {
+   "key": "chaos_rate",
+   "name": "CHAOS RATE",
+   "default": 0.4,
+   "min": 0,
+   "max": 1
+  },
+  {
+   "key": "chaos_wild",
+   "name": "CHAOS WILD",
+   "default": 0.6,
+   "min": 0,
+   "max": 1
+  },
+  {
+   "key": "chaos_dest",
+   "name": "CHAOS DEST",
+   "default": 1,
+   "options": [
+    "PITCH",
+    "CUTOFF",
+    "TIMBRE",
+    "PAN",
+    "ALL"
+   ]
+  },
+  {
+   "key": "chaos_depth",
+   "name": "CHAOS",
+   "default": 0.0,
+   "min": 0,
+   "max": 1
+  },
+  {
+   "key": "shift_freq",
+   "name": "SHIFT FREQ",
+   "default": 0.62,
+   "min": 0,
+   "max": 1
+  },
+  {
+   "key": "shift_fb",
+   "name": "SHIFT FEEDBACK",
+   "default": 0.0,
+   "min": 0,
+   "max": 1
+  },
+  {
+   "key": "shift_mode",
+   "name": "SHIFT MODE",
+   "default": 0,
+   "options": [
+    "SHIFT",
+    "RING"
+   ]
+  },
+  {
+   "key": "shift_mix",
+   "name": "SHIFT MIX",
+   "default": 0.0,
+   "min": 0,
+   "max": 1
+  },
+  {
+   "key": "mix_chs1",
+   "name": "CHAOS 1",
+   "min": 0,
+   "max": 1,
+   "default": 1.0
+  },
+  {
+   "key": "mix_chs2",
+   "name": "CHAOS 2",
+   "min": 0,
+   "max": 1,
+   "default": 1.0
+  },
+  {
+   "key": "mix_chs3",
+   "name": "CHAOS 3",
+   "min": 0,
+   "max": 1,
+   "default": 1.0
+  },
+  {
+   "key": "mix_chs4",
+   "name": "CHAOS 4",
+   "min": 0,
+   "max": 1,
+   "default": 1.0
+  },
+  {
+   "key": "mix_chs5",
+   "name": "CHAOS 5",
+   "min": 0,
+   "max": 1,
+   "default": 1.0
+  },
+  {
+   "key": "mix_chs6",
+   "name": "CHAOS 6",
+   "min": 0,
+   "max": 1,
+   "default": 1.0
+  },
+  {
+   "key": "mix_chs7",
+   "name": "CHAOS 7",
+   "min": 0,
+   "max": 1,
+   "default": 1.0
+  },
+  {
+   "key": "mix_chs8",
+   "name": "CHAOS 8",
+   "min": 0,
+   "max": 1,
+   "default": 1.0
+  },
+  {
+   "key": "mix_shs1",
+   "name": "SHIFT SEND 1",
+   "min": 0,
+   "max": 1,
+   "default": 1.0
+  },
+  {
+   "key": "mix_shs2",
+   "name": "SHIFT SEND 2",
+   "min": 0,
+   "max": 1,
+   "default": 1.0
+  },
+  {
+   "key": "mix_shs3",
+   "name": "SHIFT SEND 3",
+   "min": 0,
+   "max": 1,
+   "default": 1.0
+  },
+  {
+   "key": "mix_shs4",
+   "name": "SHIFT SEND 4",
+   "min": 0,
+   "max": 1,
+   "default": 1.0
+  },
+  {
+   "key": "mix_shs5",
+   "name": "SHIFT SEND 5",
+   "min": 0,
+   "max": 1,
+   "default": 1.0
+  },
+  {
+   "key": "mix_shs6",
+   "name": "SHIFT SEND 6",
+   "min": 0,
+   "max": 1,
+   "default": 1.0
+  },
+  {
+   "key": "mix_shs7",
+   "name": "SHIFT SEND 7",
+   "min": 0,
+   "max": 1,
+   "default": 1.0
+  },
+  {
+   "key": "mix_shs8",
+   "name": "SHIFT SEND 8",
+   "min": 0,
+   "max": 1,
+   "default": 1.0
   }
  ]
 }

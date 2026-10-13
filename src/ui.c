@@ -132,6 +132,12 @@ static void global_text(Bl *x, int g, char *buf)
     static const char *const F[11] = {"/8", "/6", "/4", "/3", "/2", "X1", "X2", "X3", "X4", "X6", "X8"};
     const float v = x->p.g[g];
     if (g == G_GD_CH) { snprintf(buf, 8, "C%d", (int)v + 1); return; }
+    if (g == G_SHIFT_FREQ) {
+        const float hz = alien_shiftHz(v);
+        if (fabsf(hz) < 10.f) snprintf(buf, 8, "%.1f", hz);
+        else snprintf(buf, 8, "%d", (int)lroundf(hz));
+        return;
+    }
     if (GLOBAL_DEFS[g].nopts) { short_label(GLOBAL_DEFS[g].opts[(int)v], buf); return; }
     if (g == G_DLY_TIME) {
         if (x->p.dlySync) strcpy(buf, F[fx_syncFactorIndex(v)]);
@@ -163,12 +169,13 @@ static void full_text(Bl *x, int kind, int id, char *buf, int n)
         if (id == G_GD_CH) { snprintf(buf, (size_t)n, "CH %d", (int)v + 1); return; }
         if (GLOBAL_DEFS[id].nopts) { snprintf(buf, (size_t)n, "%s", GLOBAL_DEFS[id].opts[(int)v]); return; }
         global_text(x, id, b);
-        snprintf(buf, (size_t)n, id == G_DLY_TIME && !x->p.dlySync ? "%s ms" : "%s", b);
+        snprintf(buf, (size_t)n, id == G_DLY_TIME && !x->p.dlySync ? "%s ms" : id == G_SHIFT_FREQ ? "%s Hz" : "%s", b);
         return;
     }
     if (kind == PK_MIX) {
         const int t = id % 8, w = id / 8;
-        const float v = id == 24 ? x->p.master : w == 0 ? x->p.snd[t].v[SP_LEVEL] : w == 1 ? x->p.snd[t].v[SP_PAN] : x->p.send[t];
+        const float v = id == 24 ? x->p.master : w == 0 ? x->p.snd[t].v[SP_LEVEL] : w == 1 ? x->p.snd[t].v[SP_PAN]
+                      : w == 4 ? x->p.chaosAmt[t] : w == 5 ? x->p.shiftSend[t] : x->p.send[t];
         if (id != 24 && w == 1) {
             const int p = (int)lroundf((v - 0.5f) * 100.f);
             if (p == 0) snprintf(buf, (size_t)n, "C");
@@ -217,7 +224,7 @@ void ui_readout(Bl *x, char *buf, int n)
         } else if (m->kind == PK_SOUND) snprintf(nm, sizeof nm, "T%d   %s", x->ui.track + 1, SOUND_DEFS[m->id].name);
         else if (m->kind == PK_GLOBAL) snprintf(nm, sizeof nm, "%s", GLOBAL_DEFS[m->id].name);
         else if (m->kind == PK_MIX) {
-            static const char *const W[3] = {"LEVEL", "PAN", "DLY SEND"};
+            static const char *const W[6] = {"LEVEL", "PAN", "DLY SEND", "", "CHAOS", "SHIFT SEND"};
             if (m->id == 24) snprintf(nm, sizeof nm, "MASTER");
             else snprintf(nm, sizeof nm, "T%d   %s", m->id % 8 + 1, W[m->id / 8]);
         } else nm[0] = 0;
@@ -817,11 +824,7 @@ float ui_knobGet(Bl *x, int which)
 void ui_midiNote(Bl *x, uint8_t ch, uint8_t note, uint8_t vel)
 {
     int t;
-    /* the gate/duck's trigger: any note on its channel, or a note in the lowest octave (C-2..B-2) on any channel */
-    if (ch == (uint8_t)x->p.g[G_GD_CH] || note < 12) {
-        if (vel) fx_duckTrigger(x);
-        return;
-    }
+    /* 0.2.0: no gate/duck trigger any more: every note plays */
     t = ch == 0 ? x->ui.track : ch < NUM_TRACKS ? ch : -1;
     if (t < 0) return;
     if (vel) {

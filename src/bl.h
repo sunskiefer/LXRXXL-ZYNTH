@@ -89,6 +89,8 @@ typedef struct {
     RndSet rset[NUM_TRACKS];
     uint8_t vel[NUM_PATTERNS][NUM_TRACKS][NUM_STEPS];
     uint8_t starter[NUM_TRACKS][NUM_ENGINES];   /* each track's starter sound per voice (the VOICE page's SOUND) */
+    float chaosAmt[NUM_TRACKS];      /* each track's CHAOS amount (the MIXER) */
+    float shiftSend[NUM_TRACKS];     /* each track's SHIFT send (the MIXER) */
     uint8_t pad3[(4 - (NUM_TRACKS * NUM_ENGINES) % 4) % 4];
 } Project;
 
@@ -132,7 +134,24 @@ typedef struct {
     float bbdLp;
     uint8_t active;                  /* sounding (or a tail still running) */
     uint32_t idle;                   /* frames of silence */
+    /* CHAOS (alien.c), this block: the track's value (-1..1, its amount and the depth in) and where it goes */
+    float chaos;
+    uint8_t chaosDest;
 } Voice;
+
+/* ---------------------------------------------------------------- CHAOS and SHIFT (alien.c) */
+typedef struct {
+    double lx, ly, lz;               /* the Lorenz attractor */
+    double ph;                       /* the calm orbit's phase */
+    float sm[NUM_TRACKS];            /* each track's value, smoothed */
+    /* SHIFT: two Hilbert pairs (left, right), the oscillator, the feedback */
+    float ap[2][2][4][2], apy[2][2][4][2];   /* [channel][chain][stage][x1,x2 / y1,y2] */
+    float qd[2];                     /* chain A's one-sample delay */
+    double sph;
+    float fb[2];
+} Alien;
+void alien_init(Alien *a);
+float alien_shiftHz(float v);
 
 /* ---------------------------------------------------------------- the delay and the gate/duck (fx.c) */
 #define DLY_LEN 65536                /* 1.48 s at 44.1 kHz: 800 ms plus room for the tape's slew */
@@ -172,6 +191,7 @@ typedef struct Bl {
 
     Voice v[NUM_TRACKS];
     Fx fx;
+    Alien al;
 
     struct {                         /* the randomizers (random.c), from LXRXXL */
         uint8_t amt, seqAmt;         /* SOUND RND AMT, STEP RND AMT: 0..10 (tens of %) */
@@ -236,6 +256,9 @@ typedef struct Bl {
         char msg[96];                /* the readout's line */
     } pr;
 } Bl;
+
+void alien_chaos(Bl *x, int n);                          /* each track's CHAOS value for this block */
+void alien_shift(Bl *x, const float *inL, const float *inR, float *L, float *R, int n);   /* the SHIFT bus, added */
 enum { PR_SOUND, PR_PERF };
 enum { PR_NONE, PR_SAVE, PR_LOAD };
 #define TOUCH_PRESET (-2)

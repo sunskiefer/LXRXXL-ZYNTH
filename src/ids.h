@@ -77,8 +77,17 @@ enum {
     G_GD_ATK,
     G_GD_REL,
     G_GD_CH,
+    G_CHAOS_RATE,
+    G_CHAOS_WILD,
+    G_CHAOS_DEST,
+    G_CHAOS_DEPTH,
+    G_SHIFT_FREQ,
+    G_SHIFT_FB,
+    G_SHIFT_MODE,
+    G_SHIFT_MIX,
     G_COUNT
 };
+#define G_COUNT_V1 11   /* 0.1.0's */
 enum {
     B_TRK1 = 0,
     B_TRK2 = 1,

@@ -174,6 +174,8 @@ static void set_param(void *p, const char *k, const char *v)
             if (m->id == 24) x->p.master = f;
             else if (w == 0) x->p.snd[t].v[SP_LEVEL] = f;
             else if (w == 1) x->p.snd[t].v[SP_PAN] = f;
+            else if (w == 4) x->p.chaosAmt[t] = f;
+            else if (w == 5) x->p.shiftSend[t] = f;
             else x->p.send[t] = f;
             break;
         }
@@ -246,7 +248,8 @@ static int get_param(void *p, const char *k, char *buf, int n)
             return put(buf, n, t);
         case PK_MIX: {
             const int t = m->id % 8, w = m->id / 8;
-            const float v = m->id == 24 ? x->p.master : w == 0 ? x->p.snd[t].v[SP_LEVEL] : w == 1 ? x->p.snd[t].v[SP_PAN] : x->p.send[t];
+            const float v = m->id == 24 ? x->p.master : w == 0 ? x->p.snd[t].v[SP_LEVEL] : w == 1 ? x->p.snd[t].v[SP_PAN]
+                          : w == 4 ? x->p.chaosAmt[t] : w == 5 ? x->p.shiftSend[t] : x->p.send[t];
             if (on) return 0;
             snprintf(t2, sizeof t2, "%.5f", v);
             return put(buf, n, t2);

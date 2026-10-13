@@ -87,6 +87,21 @@ def sp_order():
     i = [r[0] for r in rest].index("FM_RATIO")
     return rest[:i] + v + rest[i:]
 
+# 0.2.0: CHAOS (a Lorenz attractor modulating every track) and SHIFT (a frequency shifter / ring modulator on a send
+# bus), in place of the gate/duck on the pages (the gate/duck's parameters stay, unused, so MPC's indices stay)
+GLOBAL2 = [
+    ("CHAOS_RATE", "chaos_rate", "CHAOS RATE", 0.4, None),
+    ("CHAOS_WILD", "chaos_wild", "CHAOS WILD", 0.6, None),
+    ("CHAOS_DEST", "chaos_dest", "CHAOS DEST", 1, ["PITCH", "CUTOFF", "TIMBRE", "PAN", "ALL"]),
+    ("CHAOS_DEPTH", "chaos_depth", "CHAOS", 0.0, None),
+    ("SHIFT_FREQ", "shift_freq", "SHIFT FREQ", 0.62, None),
+    ("SHIFT_FB", "shift_fb", "SHIFT FEEDBACK", 0.0, None),
+    ("SHIFT_MODE", "shift_mode", "SHIFT MODE", 0, ["SHIFT", "RING"]),
+    ("SHIFT_MIX", "shift_mix", "SHIFT MIX", 0.0, None),
+]
+# 0.2.0: each track's CHAOS amount and SHIFT send (the MIXER), after MIX's three rows (ids 32.., 40..)
+MIX2 = [("chs", "CHAOS", 1.0), ("shs", "SHIFT SEND", 1.0)]
+
 # ---- the instance: the delay and the gate/duck
 GLOBAL = [
     ("DLY_TIME", "dly_time", "DELAY TIME", 0.5, None),
@@ -196,6 +211,17 @@ def params():
         else:
             e.update({"min": 0, "max": 1})
         out.append(e)
+    for g, key, name, d, opts in GLOBAL2:
+        e = {"key": key, "name": name, "default": d, "kind": "GLOBAL", "id": "G_" + g}
+        if opts:
+            e["options"] = opts
+        else:
+            e.update({"min": 0, "max": 1})
+        out.append(e)
+    for w, (k, n, d) in enumerate(MIX2):
+        for t in range(8):
+            out.append({"key": "mix_%s%d" % (k, t + 1), "name": "%s %d" % (n, t + 1), "min": 0, "max": 1, "default": d,
+                        "kind": "MIX", "id": str((4 + w) * 8 + t)})
     return out
 
 
@@ -223,7 +249,7 @@ def main():
     M += ["};"]
     # the sound and global tables: VST key, name and option labels per id (display, serialisation)
     M += ["", "typedef struct { const char *key, *name; float def; uint8_t nopts; const char *const *opts; } SoundDef;"]
-    for tab, rows, pfx in (("SOUND_DEFS", sp_order(), "SP_"), ("GLOBAL_DEFS", GLOBAL, "G_")):
+    for tab, rows, pfx in (("SOUND_DEFS", sp_order(), "SP_"), ("GLOBAL_DEFS", GLOBAL + GLOBAL2, "G_")):
         for sp, key, name, d, opts in rows:
             if opts:
                 M.append("static const char *const OPTS_%s%s[] UNUSED = {%s};" % (pfx, sp, ", ".join('"%s"' % o for o in opts)))
@@ -239,7 +265,7 @@ def main():
     E += ["    SP_%s," % sp for sp, *_ in sp_order()] + ["    SP_COUNT", "};", "#define SP_COUNT_V1 %d   /* 0.1.0's */" % len(SOUND)]
     E += ["/* 0.1.0's order of the sound parameters (its Sound.v[]): each one's SP id now */",
           "#define SP_FROM_V1 {" + ", ".join("SP_" + r[0] for r in SOUND) + "}", "enum {"]
-    E += ["    G_%s," % g for g, *_ in GLOBAL] + ["    G_COUNT", "};", "enum {"]
+    E += ["    G_%s," % g for g, *_ in GLOBAL + GLOBAL2] + ["    G_COUNT", "};", "#define G_COUNT_V1 %d   /* 0.1.0's */" % len(GLOBAL), "enum {"]
     E += ["    B_%s = %d," % (k.upper(), i) for i, (k, _) in enumerate(BUTTONS + BUTTONS2 + BUTTONS3)]
     E += ["    NUM_BUTTONS = %d" % len(BUTTONS + BUTTONS2 + BUTTONS3), "};", "#define NUM_SLOTS %d" % NUM_SLOTS, "#define GLYPHS \"%s\"" % GLYPHS, "#define NUM_GLYPHS %d" % len(GLYPHS)]
     open(os.path.join(ROOT, "src/ids.h"), "w").write("\n".join(E) + "\n")

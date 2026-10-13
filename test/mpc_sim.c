@@ -147,10 +147,10 @@ int main(void)
         CHECK(opt(a, P_TRACK, 8) == 0, "a Q-Link backwards: TRACK 1 (%d)", opt(a, P_TRACK, 8) + 1);
         a->setP(a, P_TRACK, a->getP(a, P_TRACK) + 0.01f);
         CHECK(opt(a, P_TRACK, 8) == 1, "the wheel forwards: TRACK 2 (%d)", opt(a, P_TRACK, 8) + 1);
-        a->setP(a, P_GD_CH, a->getP(a, P_GD_CH) - 0.01f);
-        CHECK(opt(a, P_GD_CH, 16) == 8, "the duck's MIDI CH backwards: 10 -> 9 (%d)", opt(a, P_GD_CH, 16) + 1);
-        a->setP(a, P_GD_CH, a->getP(a, P_GD_CH) + 1.f / 128);
-        CHECK(opt(a, P_GD_CH, 16) == 9, "and forwards: 10 (%d)", opt(a, P_GD_CH, 16) + 1);
+        a->setP(a, P_CHAOS_DEST, a->getP(a, P_CHAOS_DEST) - 0.01f);
+        CHECK(opt(a, P_CHAOS_DEST, 5) == 0, "CHAOS DEST backwards: CUTOFF -> PITCH (%d)", opt(a, P_CHAOS_DEST, 5));
+        a->setP(a, P_CHAOS_DEST, a->getP(a, P_CHAOS_DEST) + 1.f / 128);
+        CHECK(opt(a, P_CHAOS_DEST, 5) == 1, "and forwards: CUTOFF (%d)", opt(a, P_CHAOS_DEST, 5));
         tap(a, P_TRK1);
         /* the mixer's LEVEL 1 is track 1's LEVEL; the readout names it */
         {
@@ -266,18 +266,20 @@ int main(void)
     display(a, d);
     CHECK(strcmp(d, "ACC"), "SHIFT leaves the function ('%s')", d);
 
-    /* the duck: on, its channel 10 */
-    tap(a, P_GD_ON);
-    a->setP(a, P_GD_DEPTH, 1.f);
+    /* 0.2.0: no gate/duck: a note on channel 10 plays track 10 % 8 nothing ducks; SHIFT MIX brings the SHIFT bus in */
     run(a, 0.1);
     note(a, 0x90, 36, 100);
     r1 = run(a, 0.1);
-    note(a, 0x99, 36, 100);   /* a kick on channel 10 */
+    note(a, 0x99, 36, 100);
     r = run(a, 0.04);
     note(a, 0x89, 36, 0);
+    CHECK(r > r1 * 0.6, "a note on channel 10 ducks nothing any more (%.4f -> %.4f)", r1, r);
+    a->setP(a, P_SHIFT_MIX, 1.f);
+    a->setP(a, P_SHIFT_FREQ, 0.8f);
+    r = run(a, 0.2);
+    CHECK(r == r && r > r1 * 0.5, "SHIFT MIX up: the shifted bus joins (%.4f)", r);
+    a->setP(a, P_SHIFT_MIX, 0.f);
     note(a, 0x80, 36, 0);
-    CHECK(r < r1 * 0.4, "a note on channel 10 ducks the bass (%.4f -> %.4f)", r1, r);
-    tap(a, P_GD_ON);
     run(a, 1.0);
 
     /* the project: saved as MPC saves it, loaded into a new instance */

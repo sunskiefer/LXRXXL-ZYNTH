@@ -190,6 +190,30 @@ static const ParamMap PARAM_MAP[P_COUNT] UNUSED = {
     {PK_SOUND, SP_V20, 0},   /* v20 */
     {PK_SOUND, SP_VCF_SUS, 0},   /* vcf_sus */
     {PK_SOUND, SP_VCF_REL, 0},   /* vcf_rel */
+    {PK_GLOBAL, G_CHAOS_RATE, 0},   /* chaos_rate */
+    {PK_GLOBAL, G_CHAOS_WILD, 0},   /* chaos_wild */
+    {PK_GLOBAL, G_CHAOS_DEST, 5},   /* chaos_dest */
+    {PK_GLOBAL, G_CHAOS_DEPTH, 0},   /* chaos_depth */
+    {PK_GLOBAL, G_SHIFT_FREQ, 0},   /* shift_freq */
+    {PK_GLOBAL, G_SHIFT_FB, 0},   /* shift_fb */
+    {PK_GLOBAL, G_SHIFT_MODE, 2},   /* shift_mode */
+    {PK_GLOBAL, G_SHIFT_MIX, 0},   /* shift_mix */
+    {PK_MIX, 32, 0},   /* mix_chs1 */
+    {PK_MIX, 33, 0},   /* mix_chs2 */
+    {PK_MIX, 34, 0},   /* mix_chs3 */
+    {PK_MIX, 35, 0},   /* mix_chs4 */
+    {PK_MIX, 36, 0},   /* mix_chs5 */
+    {PK_MIX, 37, 0},   /* mix_chs6 */
+    {PK_MIX, 38, 0},   /* mix_chs7 */
+    {PK_MIX, 39, 0},   /* mix_chs8 */
+    {PK_MIX, 40, 0},   /* mix_shs1 */
+    {PK_MIX, 41, 0},   /* mix_shs2 */
+    {PK_MIX, 42, 0},   /* mix_shs3 */
+    {PK_MIX, 43, 0},   /* mix_shs4 */
+    {PK_MIX, 44, 0},   /* mix_shs5 */
+    {PK_MIX, 45, 0},   /* mix_shs6 */
+    {PK_MIX, 46, 0},   /* mix_shs7 */
+    {PK_MIX, 47, 0},   /* mix_shs8 */
 };
 
 typedef struct { const char *key, *name; float def; uint8_t nopts; const char *const *opts; } SoundDef;
@@ -267,6 +291,8 @@ static const SoundDef SOUND_DEFS[] UNUSED = {
 static const char *const OPTS_G_DLY_MODE[] UNUSED = {"TAPE", "DIGITAL"};
 static const char *const OPTS_G_GD_MODE[] UNUSED = {"GATE", "DUCK"};
 static const char *const OPTS_G_GD_CH[] UNUSED = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"};
+static const char *const OPTS_G_CHAOS_DEST[] UNUSED = {"PITCH", "CUTOFF", "TIMBRE", "PAN", "ALL"};
+static const char *const OPTS_G_SHIFT_MODE[] UNUSED = {"SHIFT", "RING"};
 static const SoundDef GLOBAL_DEFS[] UNUSED = {
     {"dly_time", "DELAY TIME", 0.5f, 0, 0},
     {"dly_in", "DELAY IN LVL", 0.7f, 0, 0},
@@ -279,4 +305,12 @@ static const SoundDef GLOBAL_DEFS[] UNUSED = {
     {"gd_atk", "ATTACK", 0.1f, 0, 0},
     {"gd_rel", "RELEASE", 0.35f, 0, 0},
     {"gd_ch", "DUCK MIDI CH", 9.0f, 16, OPTS_G_GD_CH},
+    {"chaos_rate", "CHAOS RATE", 0.4f, 0, 0},
+    {"chaos_wild", "CHAOS WILD", 0.6f, 0, 0},
+    {"chaos_dest", "CHAOS DEST", 1.0f, 5, OPTS_G_CHAOS_DEST},
+    {"chaos_depth", "CHAOS", 0.0f, 0, 0},
+    {"shift_freq", "SHIFT FREQ", 0.62f, 0, 0},
+    {"shift_fb", "SHIFT FEEDBACK", 0.0f, 0, 0},
+    {"shift_mode", "SHIFT MODE", 0.0f, 2, OPTS_G_SHIFT_MODE},
+    {"shift_mix", "SHIFT MIX", 0.0f, 0, 0},
 };

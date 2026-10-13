@@ -187,19 +187,97 @@ int main(int argc, char **argv)
         peak = play(in, &ppq, 120, 0.3, 0, &rms, NULL);
         CHECK(rms > 0.01, "a MIDI note plays the selected track (rms %f)", rms);
         r1 = (float)rms;
-        /* the duck: on, a note on its channel (10) */
+        /* 0.2.0: the gate/duck is gone: a note on channel 10 or in the lowest octave ducks nothing */
         set(in, "gd_on", "1");
-        setf(in, "gd_depth", 1.f);
-        setf(in, "gd_mode", 1);
+        CHECK(x->p.gdOn == 1, "(the old key still toggles its flag)");
         {
-            uint8_t duck[3] = {0x99, 36, 100};
+            uint8_t duck[3] = {0x99, 36, 100}, low[3] = {0x90, 5, 100};
             E->midi(in, duck, 3);
+            E->midi(in, low, 3);
         }
         play(in, &ppq, 120, 0.05, 0, &rms, NULL);
         r2 = (float)rms;
-        CHECK(r2 < r1 * 0.3f, "a note on the duck's channel ducks (%f -> %f)", r1, r2);
+        CHECK(r2 > r1 * 0.6f, "nothing ducks any more (%f -> %f)", r1, r2);
         E->midi(in, off, 3);
+        {
+            uint8_t low0[3] = {0x80, 5, 0};
+            E->midi(in, low0, 3);
+        }
         set(in, "gd_on", "1");
+    }
+
+    /* ---- CHAOS: every track its own motion; SHIFT: a partial moved by the set number of Hz */
+    {
+        int t, same = 0;
+        float a0[NUM_TRACKS];
+        setf(in, "chaos_depth", 1.f);
+        setf(in, "chaos_wild", 1.f);
+        setf(in, "chaos_rate", 0.7f);
+        play(in, &ppq, 120, 0.5, 0, &rms, NULL);
+        for (t = 0; t < NUM_TRACKS; t++) a0[t] = x->v[t].chaos;
+        for (t = 1; t < NUM_TRACKS; t++) same += fabsf(a0[t] - a0[0]) < 1e-4f;
+        CHECK(same == 0, "CHAOS: each track moves on its own (%d alike)", same);
+        play(in, &ppq, 120, 0.5, 0, &rms, NULL);
+        CHECK(fabsf(x->v[0].chaos - a0[0]) > 1e-4f, "CHAOS moves (%f -> %f)", a0[0], x->v[0].chaos);
+        setf(in, "mix_chs1", 0.f);
+        play(in, &ppq, 120, 0.05, 0, &rms, NULL);
+        CHECK(x->v[0].chaos == 0.f, "a track's CHAOS amount at 0: still (%f)", x->v[0].chaos);
+        setf(in, "mix_chs1", 1.f);
+        for (t = 0; t < 5; t++) {   /* every destination, played: no NaN, no blow-up */
+            uint8_t on2[3] = {0x90, 48, 100}, off2[3] = {0x80, 48, 0};
+            char b2[8];
+            snprintf(b2, sizeof b2, "%d", t);
+            set(in, "chaos_dest", b2);
+            E->midi(in, on2, 3);
+            peak = play(in, &ppq, 120, 0.6, 0, &rms, NULL);
+            E->midi(in, off2, 3);
+            CHECK(peak == peak && peak < 1.f && rms > 0.003, "CHAOS > %s plays (peak %f rms %f)", b2, peak, rms);
+        }
+        setf(in, "chaos_depth", 0.f);
+        play(in, &ppq, 120, 0.3, 0, &rms, NULL);
+        CHECK(x->v[0].chaos == 0.f, "CHAOS at 0: nothing moves");
+        /* SHIFT, measured on the bus alone: a 1 kHz sine shifted up 250 Hz comes out at 1250 Hz, not 750 */
+        {
+            static float inL[128], inR[128], oL[128], oR[128];
+            double ph = 0, c1250r = 0, c1250i = 0, c750r = 0, c750i = 0, c1000r = 0, c1000i = 0;
+            int blk, k2;
+            float want = 0.5f + 0.5f * log2f(251.f) / 11.f;   /* SHIFT FREQ's knob at +250 Hz */
+            alien_init(&x->al);
+            setf(in, "shift_mix", 1.f);
+            setf(in, "shift_fb", 0.f);
+            set(in, "shift_mode", "0");
+            setf(in, "shift_freq", want);
+            CHECK(fabsf(alien_shiftHz(x->p.g[G_SHIFT_FREQ]) - 250.f) < 1.f, "SHIFT FREQ's scale (%f Hz)", alien_shiftHz(x->p.g[G_SHIFT_FREQ]));
+            for (blk = 0; blk < 200; blk++) {
+                for (k2 = 0; k2 < 128; k2++) { inL[k2] = inR[k2] = 0.5f * sinf((float)(6.283185307 * ph)); ph += 1000.0 / 44100.0; }
+                memset(oL, 0, sizeof oL); memset(oR, 0, sizeof oR);
+                alien_shift(x, inL, inR, oL, oR, 128);
+                if (blk >= 40)
+                    for (k2 = 0; k2 < 128; k2++) {
+                        const double tt = (blk * 128 + k2) / 44100.0;
+                        c1250r += oL[k2] * cos(6.283185307 * 1250 * tt); c1250i += oL[k2] * sin(6.283185307 * 1250 * tt);
+                        c750r += oL[k2] * cos(6.283185307 * 750 * tt); c750i += oL[k2] * sin(6.283185307 * 750 * tt);
+                        c1000r += oL[k2] * cos(6.283185307 * 1000 * tt); c1000i += oL[k2] * sin(6.283185307 * 1000 * tt);
+                    }
+            }
+            {
+                const double up = hypot(c1250r, c1250i), dn = hypot(c750r, c750i), st = hypot(c1000r, c1000i);
+                printf("SHIFT +250 Hz on 1 kHz: 1250 %.1f, 750 %.1f, 1000 %.1f\n", up, dn, st);
+                CHECK(up > 20.0 * dn && up > 20.0 * st, "SHIFT: 1 kHz up 250 Hz is 1250 Hz (1250 %.1f, 750 %.1f, 1000 %.1f)", up, dn, st);
+            }
+            setf(in, "shift_fb", 0.9f);
+            set(in, "shift_mode", "1");
+            {
+                uint8_t on2[3] = {0x90, 60, 100}, off2[3] = {0x80, 60, 0};
+                E->midi(in, on2, 3);
+                peak = play(in, &ppq, 120, 1.0, 0, &rms, NULL);
+                E->midi(in, off2, 3);
+                CHECK(peak == peak && peak < 1.f && rms > 0.003, "RING with FEEDBACK plays, stays bounded (peak %f rms %f)", peak, rms);
+            }
+            setf(in, "shift_mix", 0.f);
+            setf(in, "shift_fb", 0.f);
+            set(in, "shift_mode", "0");
+        }
     }
 
     /* ---- the delay: HOLD, ADD, REVERSE, TAPE and DIGITAL, a tapped sync */
@@ -409,7 +487,7 @@ int main(int argc, char **argv)
     {
         typedef struct { float v[SP_COUNT_V1]; float mem[NUM_ENGINES_V1][ENG_SLIDERS_V1]; } SoundV1;
         typedef struct {
-            SoundV1 snd[NUM_TRACKS]; Pattern pats[NUM_PATTERNS]; float g[G_COUNT]; float bpm;
+            SoundV1 snd[NUM_TRACKS]; Pattern pats[NUM_PATTERNS]; float g[G_COUNT_V1]; float bpm;
             uint8_t links, mutes, gdOn, dlySync; float dlyTap; uint8_t pad[4]; float send[NUM_TRACKS]; float master;
             uint8_t solos; uint8_t pad2[3];
         } ProjectV1;
@@ -430,7 +508,7 @@ int main(int argc, char **argv)
         }
         memcpy(o.pats, x->p.pats, sizeof o.pats);
         o.bpm = 133; o.master = 0.7f; o.mutes = 5;
-        for (k = 0; k < G_COUNT; k++) o.g[k] = GLOBAL_DEFS[k].def;
+        for (k = 0; k < G_COUNT_V1; k++) o.g[k] = GLOBAL_DEFS[k].def;
         for (t = 0; t < NUM_TRACKS; t++) o.send[t] = 1.f;
         h = snprintf(text, 128, "LXRXXL-ZYNTH 1 %u 3 2\n", (unsigned)sizeof o);
         for (i = 0; i < sizeof o; i++) { text[h + 2 * i] = hex[((uint8_t *)&o)[i] >> 4]; text[h + 2 * i + 1] = hex[((uint8_t *)&o)[i] & 15]; }
@@ -570,6 +648,7 @@ int main(int argc, char **argv)
             voice_noteOn(&x->v[t], s, 48.f + t * 3, 0.8f, 0, 0, 0, 1);
         }
         setf(in, "dly_wet", 0.5f);
+        setf(in, "shift_mix", 0.5f); setf(in, "chaos_depth", 0.5f);   /* SHIFT and CHAOS on too */
         set(in, "gd_on", "1");
         clock_gettime(CLOCK_MONOTONIC, &t0);
         {
@@ -581,7 +660,7 @@ int main(int argc, char **argv)
         us = ((t1.tv_sec - t0.tv_sec) * 1e9 + (t1.tv_nsec - t0.tv_nsec)) / 1000.0 / 1000.0;
         printf("worst case: %.1f us per 128-frame block (this machine)\n", us);
         for (t = 0; t < NUM_TRACKS; t++) voice_noteOff(&x->v[t]);
-        set(in, "gd_on", "1");
+        setf(in, "shift_mix", 0.f); setf(in, "chaos_depth", 0.f);
         set(in, "shift", "1"); set(in, "mute", "1");
     }
 

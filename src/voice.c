@@ -169,7 +169,8 @@ void voice_render(Voice *v, const Sound *s, float bpm, float *L, float *R, int n
     if (v->eng[0].type != type) { eng_reset(&v->eng[0], type); eng_reset(&v->eng[1], type); }
     {
         const float lv = s->v[SP_LEVEL];
-        const float pan = clampf(s->v[SP_PAN], 0, 1);
+        const float cp = v->chaosDest == 3 ? 0.5f * v->chaos : v->chaosDest == 4 ? 0.35f * v->chaos : 0.f;   /* CHAOS > PAN */
+        const float pan = clampf(s->v[SP_PAN] + cp, 0, 1);
         gain = 1.25f * lv * lv;
         panL = cosf(pan * 1.5707963f) * 1.41421356f;
         panR = sinf(pan * 1.5707963f) * 1.41421356f;
@@ -281,6 +282,20 @@ void voice_render(Voice *v, const Sound *s, float bpm, float *L, float *R, int n
             if (envB != 0.f && tB >= 0) in.p[tB] = clampf(in.p[tB] + envB * v->menv, 0, 1);
             if (velA != 0.f && tV >= 0) in.p[tV] = clampf(in.p[tV] + velA * (v->vel - 0.5f), 0, 1);
             if (vibD > 0.f) pitch += vibD * v->vibAmt * sinf(TWO_PI * v->vibPh);
+            if (v->chaos != 0.f) {   /* CHAOS (alien.c): PITCH, CUTOFF, TIMBRE, (PAN: above), ALL */
+                const float c = v->chaos;
+                switch (v->chaosDest) {
+                case 0: pitch += 7.f * c; break;
+                case 1: cut += 3.f * c; break;
+                case 2: if (timbre >= 0) in.p[timbre] = clampf(in.p[timbre] + 0.5f * c, 0, 1); break;
+                case 4:
+                    pitch += 0.6f * c;
+                    cut += 2.f * c;
+                    if (timbre >= 0) in.p[timbre] = clampf(in.p[timbre] + 0.35f * c, 0, 1);
+                    break;
+                default: break;
+                }
+            }
             switch (modDest) {
             case 0: pitch += 12.f * lv; break;
             case 1: cut += 4.f * lv; break;

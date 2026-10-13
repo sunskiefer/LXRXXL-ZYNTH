@@ -16,7 +16,7 @@ typedef struct {
 typedef struct {
     SoundV1 snd[NUM_TRACKS];
     Pattern pats[NUM_PATTERNS];
-    float g[G_COUNT];
+    float g[G_COUNT_V1];
     float bpm;
     uint8_t links, mutes, gdOn, dlySync;
     float dlyTap;
@@ -44,9 +44,9 @@ static void from_v1(Project *np, const ProjectV1 *o)
         s->v[SP_SUSTAIN] = s->v[SP_VCA_DEC] <= 0.02f ? 1.f : 0.f;
     }
     memcpy(np->pats, o->pats, sizeof np->pats);
-    memcpy(np->g, o->g, sizeof np->g);
+    memcpy(np->g, o->g, sizeof o->g);   /* the new globals keep their defaults */
     np->bpm = o->bpm;
-    np->links = o->links; np->mutes = o->mutes; np->gdOn = o->gdOn; np->dlySync = o->dlySync;
+    np->links = o->links; np->mutes = o->mutes; np->gdOn = 0;   /* 0.2.0: no gate/duck any more: off */ np->dlySync = o->dlySync;
     np->dlyTap = o->dlyTap;
     memcpy(np->send, o->send, sizeof np->send);
     np->master = o->master;
@@ -164,6 +164,11 @@ int store_deserialize(Bl *x, const char *text)
     if (!(np->bpm >= 0.f && np->bpm <= 300.f)) np->bpm = 0;
     for (t = 0; t < NUM_TRACKS; t++) if (!(np->send[t] >= 0.f && np->send[t] <= 1.f)) np->send[t] = 1.f;
     if (!(np->master >= 0.f && np->master <= 1.f)) np->master = 0.8f;
+    for (t = 0; t < NUM_TRACKS; t++) {
+        if (!(np->chaosAmt[t] >= 0.f && np->chaosAmt[t] <= 1.f)) np->chaosAmt[t] = 1.f;
+        if (!(np->shiftSend[t] >= 0.f && np->shiftSend[t] <= 1.f)) np->shiftSend[t] = 1.f;
+    }
+    np->gdOn = 0;   /* 0.2.0: the gate/duck is gone */
     seq_stop(x);
     x->p = *np;
     free(np);

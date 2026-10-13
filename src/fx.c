@@ -92,7 +92,7 @@ void fx_render(Bl *x, float *L, float *R, const float *sL, const float *sR, int 
     const uint32_t holdN = (uint32_t)(g[G_GD_HOLD] * SR);
     const float depth = g[G_GD_DEPTH];
     const int duck = g[G_GD_MODE] >= 1.f;
-    const int gdOn = x->p.gdOn;
+    const int gdOn = 0;   /* 0.2.0: the gate/duck is gone from the pages (CHAOS and SHIFT took its place) */
     int i, c;
     if (!f->buf[0] || !f->buf[1]) return;
     /* DIGITAL: a new time crossfades from the old tap */

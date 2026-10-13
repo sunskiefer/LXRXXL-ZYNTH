@@ -36,6 +36,7 @@ void bl_initProject(Project *p)
     p->bpm = 0;
     p->gdOn = 0;
     for (t = 0; t < NUM_TRACKS; t++) p->send[t] = 1.f;
+    for (t = 0; t < NUM_TRACKS; t++) { p->chaosAmt[t] = 1.f; p->shiftSend[t] = 1.f; }
     for (t = 0; t < NUM_TRACKS; t++) { p->rset[t].lenOpt = 3; p->rset[t].vel = RV_GROOVE; p->rset[t].style = RS_AUTO; }
     p->master = 0.8f;
 }
@@ -55,6 +56,7 @@ void bl_init(Bl *x)
     for (t = 0; t < NUM_TRACKS; t++) { x->v[t].eng[0].mi = mi[t][0]; x->v[t].eng[1].mi = mi[t][1]; }
     for (t = 0; t < NUM_TRACKS; t++) voice_init(&x->v[t]);
     fx_init(&x->fx);
+    alien_init(&x->al);
     x->nextPat = 0xff;
     x->seq.rng = 0x51ED270Bu;
     x->rnd = 0x7F4A7C15u;
@@ -84,8 +86,11 @@ static int audible(Bl *x, int t)
 void bl_render(Bl *x, float *L, float *R, int n)
 {
     int done = 0, t, i, guard = 0;
-    float sL[128], sR[128], vL[128], vR[128];
+    float sL[128], sR[128], vL[128], vR[128], hL[128], hR[128];
+    const int shiftOn = x->p.g[G_SHIFT_MIX] > 0.0005f;
     if (n > 128) n = 128;
+    alien_chaos(x, n);
+    if (shiftOn) { memset(hL, 0, sizeof hL); memset(hR, 0, sizeof hR); }
     memset(L, 0, sizeof(float) * (size_t)n);
     memset(R, 0, sizeof(float) * (size_t)n);
     memset(sL, 0, sizeof sL);
@@ -110,6 +115,10 @@ void bl_render(Bl *x, float *L, float *R, int n)
                         sL[done + i] += vL[i] * snd;
                         sR[done + i] += vR[i] * snd;
                     }
+                    if (shiftOn) {
+                        const float hs = x->p.shiftSend[t];
+                        for (i = 0; i < chunk; i++) { hL[done + i] += vL[i] * hs; hR[done + i] += vR[i] * hs; }
+                    }
                 }
             }
         }
@@ -117,6 +126,7 @@ void bl_render(Bl *x, float *L, float *R, int n)
         done += chunk;
     }
     fx_render(x, L, R, sL, sR, n);
+    if (shiftOn) alien_shift(x, hL, hR, L, R, n);
     {
         const float m = x->p.master * 1.25f;
         for (t = 0; t < n; t++) { L[t] = soft(L[t] * 0.8f * m); R[t] = soft(R[t] * 0.8f * m); }
