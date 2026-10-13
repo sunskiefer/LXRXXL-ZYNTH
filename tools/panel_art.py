@@ -130,6 +130,21 @@ def mixer_finish(w, h):
     return Image.fromarray(np.clip(base + shade, 0, 255).astype(np.uint8), "RGB").convert("RGBA")
 
 
+def printed_label(page, rect, text, cap=8):
+    """a legend like the MODULES page's printed ones (KEY TRACK, RATE): Michroma, pale, an ice glow round it"""
+    import zynth_art
+    x, y, w, h = rect
+    core = zynth_art.legend(text, cap, ratio=1.0, track=1.6 if cap < 13 else 3.0, sw=2, colour=(226, 233, 228))
+    pad = 6
+    glow = Image.new("RGBA", (core.width + 2 * pad, core.height + 2 * pad), LIT + (0,))
+    a = np.zeros((glow.height, glow.width), np.uint8)
+    a[pad:pad + core.height, pad:pad + core.width] = np.asarray(core)[..., 3]
+    glow.putalpha(Image.fromarray(a).filter(ImageFilter.GaussianBlur(2.2)).point(lambda v: int(v * 0.9)))
+    ox, oy = R(x + w / 2 - glow.width / 2), R(y + h / 2 - glow.height / 2)
+    page.alpha_composite(glow, (ox, oy))
+    page.alpha_composite(core, (ox + pad, oy + pad))
+
+
 def window(d, rect, radius=6):
     x, y, w, h = rect
     d.rounded_rectangle([x, y, x + w - 1, y + h - 1], radius=radius, fill=WINDOW + (255,), outline=(40, 40, 40, 255), width=2)
@@ -201,6 +216,8 @@ def make_background(tab):
         bg_art = clean_patch(bg_art, m)
     if tab == 1:
         bg_art = relabel(bg_art)
+        for (x0, y0, x1, y1), *_ in P.MODULES_REPRINT + P.MODULES_REPRINT2:   # reprinted bigger on the page
+            bg_art = clean_patch(bg_art, (x0 - 3, y0 - 3, x1 - x0 + 6, y1 - y0 + 6))
         for r in P.MODULES_WIPE:   # the title (the VOICE selector's place) and OSC MODE's legends
             bg_art = clean_patch(bg_art, r)
     if tab == 0:
@@ -209,7 +226,10 @@ def make_background(tab):
         x, y, w, h = P.DISPLAY_BOX
         a = np.asarray(bg_art).copy()
         sub_ = a[y:y + h, x:x + w, :3].astype(np.int32)
-        seg = (sub_[..., 0] > 40) & (sub_[..., 0] > sub_[..., 2] * 2)   # the printed segments (lit and ghost)
+        # the printed segments (lit and ghost, orange or recoloured ice): anything coloured or lit in the window
+        seg = ((sub_.max(-1) - sub_.min(-1)) > 14) | (sub_.max(-1) > 42)
+        seg[:4, :] = seg[-4:, :] = False                 # the window's edge stays
+        seg[:, :4] = seg[:, -4:] = False
         seg = np.asarray(Image.fromarray((seg * 255).astype(np.uint8)).filter(ImageFilter.MaxFilter(5))) > 0
         sub_[seg] = WINDOW
         a[y:y + h, x:x + w, :3] = sub_
@@ -238,8 +258,16 @@ def make_background(tab):
             page.alpha_composite(pic, (R(cx - pic.size[0] / 2), R(cy - pic.size[1] / 2)))
     if tab == 1:
         label(d, P.VOICE_LABEL, "VOICE", 17)
-        for rect, txt, px in P.MODULES_LABELS:
-            label(d, rect, txt, px)
+        for rect, txt, px in P.MODULES_LABELS:   # as the page's printed legends: pale letters with an ice glow
+            printed_label(page, rect, txt, px)
+        for (x0, y0, x1, y1), txt, c, cap in P.MODULES_REPRINT:
+            cx, cy = c if c else ((x0 + x1) / 2, (y0 + y1) / 2)
+            px_, py_ = P.page(tab, cx, cy)
+            printed_label(page, (px_ - 80, py_ - 9, 160, 18), txt, cap)
+        for (x0, y0, x1, y1), lines, (cx, cy), cap in P.MODULES_REPRINT2:
+            px_, py_ = P.page(tab, cx, cy)
+            for i, txt in enumerate(lines):
+                printed_label(page, (px_ - 60, py_ - 8 + (i - 0.5) * (cap + 5), 120, 16), txt, cap)
         for rect in P.LABEL_WINDOWS:   # under the voice's labels (pictures, one per voice)
             window(d, rect, 5)
         for rect, txt in P.FIXED_WINDOWS:   # the envelope's, LEVEL's and PAN's legends in the same windows
@@ -466,17 +494,25 @@ def window_label(im, text):
     w, h = im.size
     lines = text.split("|")
     px = 13 if len(lines) == 1 else 11
-    while px > 7:
+    while px > 11:
         f = label_font(px * SS)
         if max(f.getlength(t) for t in lines) <= (w - 8) * SS:
             break
         px -= 1
-    big_ = Image.new("RGBA", (w * SS, h * SS), (0, 0, 0, 0))
-    dd = ImageDraw.Draw(big_)
     f = label_font(px * SS)
+    tw = int(max(f.getlength(t) for t in lines)) + 4 * SS
+    big_ = Image.new("RGBA", (max(tw, w * SS), h * SS), (0, 0, 0, 0))
+    dd = ImageDraw.Draw(big_)
     gap = (px + 3) * SS
     for i, t in enumerate(lines):
-        dd.text((w * SS / 2, h * SS / 2 + (i - (len(lines) - 1) / 2) * gap), t, font=f, anchor="mm", fill=LIT + (255,))
+        dd.text((big_.width / 2, h * SS / 2 + (i - (len(lines) - 1) / 2) * gap), t, font=f, anchor="mm", fill=LIT + (255,))
+    room = (w - 6) * SS
+    if tw > room:   # a long word: condensed into the window, not made smaller
+        inner = big_.crop(((big_.width - tw) // 2, 0, (big_.width + tw) // 2, h * SS)).resize((room, h * SS), Image.LANCZOS)
+        big_ = Image.new("RGBA", (w * SS, h * SS), (0, 0, 0, 0))
+        big_.alpha_composite(inner, ((w * SS - room) // 2, 0))
+    elif big_.width != w * SS:
+        big_ = big_.crop(((big_.width - w * SS) // 2, 0, (big_.width + w * SS) // 2, h * SS))
     small = big_.resize((w, h), Image.LANCZOS)
     im.alpha_composite(small.filter(ImageFilter.GaussianBlur(2.5)))
     im.alpha_composite(small)
@@ -584,6 +620,9 @@ class Skin:
 
     def opts(self, key):
         return len(self.params[self.index[key]].get("options") or [])
+
+    def opt_names(self, key):
+        return list(self.params[self.index[key]].get("options") or [])
 
     def has_def(self, key):
         return any(d["key"] == key for d in self.defs)
@@ -712,10 +751,12 @@ def build_page(sk, tab):
             col_w = bw / n
             thumbs = [(hx0 + 4.5 + i * (hx1 - hx0 - 9) / (n - 1), hy) for i in range(n)]
             seg_rects = [(bx + i * col_w, by, col_w, bh) for i in range(n)]
-            looks = bar_looks(src, seg_rects)
-            radio(key, [prect(tab, bx + i * col_w, by - 2, col_w, bh + 4) for i in range(n)],
-                  lambda i, img, rect, seg_rects=seg_rects, looks=looks: paste_look(img, rect, seg_rects[i], looks[i][1]),
-                  lambda i, img, rect, seg_rects=seg_rects, looks=looks: paste_look(img, rect, seg_rects[i], looks[i][0]),
+            words = sk.opt_names(key)
+            zr = [prect(tab, bx + i * col_w, by - 2, col_w, bh + 4) for i in range(n)]
+            wpx = min(P.BAR_TEXT, zr[0][3] - 5)
+            radio(key, zr,
+                  lambda i, img, rect, words=words, wpx=wpx: word_cell(img, rect, rect, words[i], True, wpx),
+                  lambda i, img, rect, words=words, wpx=wpx: word_cell(img, rect, rect, words[i], False, wpx),
                   lab="bar")
             sw_ = (hx1 - hx0 + 8) / n
             radio(key, [prect(tab, hx0 - 4 + i * sw_, hy - 10, sw_, 20) for i in range(n)],
@@ -748,10 +789,11 @@ def build_page(sk, tab):
         sxx, sy0, sy1 = P.SYNC_SLOT
         zones = [prect(tab, 938, 285, 54, 64), prect(tab, 938, 349, 54, 60)]
         thumbs = [(sxx, sy0 + 6), (sxx, sy1 - 6)]
-        looks = bar_looks(src, labs["mod_sync"])
+        sync_words = sk.opt_names("mod_sync")
+        sync_cells = [prect(tab, 936, 290, 50, 18), prect(tab, 934, 388, 54, 16)]
         radio("mod_sync", zones,
-              lambda i, img, rect: (paste_look(img, rect, labs["mod_sync"][i], looks[i][1]), thumb_at(img, rect, thumbs[i], sync_pic)),
-              lambda i, img, rect: paste_look(img, rect, labs["mod_sync"][i], looks[i][0]), lab="sync")
+              lambda i, img, rect: (word_cell(img, rect, sync_cells[i], sync_words[i], True), thumb_at(img, rect, thumbs[i], sync_pic)),
+              lambda i, img, rect: word_cell(img, rect, sync_cells[i], sync_words[i], False), lab="sync")
 
     # ---- keys
     lit_big = recolour(art("btn_lit_big.png"), LIT)
@@ -981,6 +1023,46 @@ def _levels(a, rect):
     sub_ = a[y:y + h, x:x + w, :3].astype(np.float32)
     lum = sub_ @ np.array([0.30, 0.59, 0.11], np.float32)
     return lum, np.percentile(lum, 5), np.percentile(lum, 97)
+
+
+def word_cell(img, zone_rect, cell, text, selected, px=None):
+    """a selector's option in label-window style, over its printed one (page px): unselected, ice letters with a glow on
+    the window's dark; selected, a lit ice box with dark letters"""
+    x, y, w, h = cell
+    big = Image.new("RGBA", (w * SS, h * SS), (0, 0, 0, 0))
+    d = ImageDraw.Draw(big)
+    if selected:
+        d.rounded_rectangle([0, 0, w * SS - 1, h * SS - 1], radius=3 * SS, fill=(200, 232, 248, 255),
+                            outline=(240, 250, 255, 255), width=SS)
+    else:
+        d.rounded_rectangle([0, 0, w * SS - 1, h * SS - 1], radius=3 * SS, fill=WINDOW + (255,),
+                            outline=(46, 52, 56, 255), width=SS)
+    if px is None:
+        px = min(P.BAR_TEXT, h - 5)
+    f = label_font(px * SS)
+    tw = int(f.getlength(text)) + 4 * SS
+    word = Image.new("RGBA", (tw, h * SS), (0, 0, 0, 0))
+    ImageDraw.Draw(word).text((tw / 2, h * SS / 2 + SS), text, font=f, anchor="mm",
+                              fill=(8, 22, 30, 255) if selected else LIT + (255,))
+    room = (w - 5) * SS
+    if tw > room:   # a long word: condensed to its cell, the same height as the others
+        word = word.resize((int(room), h * SS), Image.LANCZOS)
+    txt = Image.new("RGBA", big.size, (0, 0, 0, 0))
+    txt.alpha_composite(word, ((w * SS - word.width) // 2, 0))
+    cell_im = big.resize((w, h), Image.LANCZOS)
+    t = txt.resize((w, h), Image.LANCZOS)
+    if not selected:
+        cell_im.alpha_composite(t.filter(ImageFilter.GaussianBlur(2.0)))
+    cell_im.alpha_composite(t)
+    img.alpha_composite(cell_im, (x - zone_rect[0], y - zone_rect[1]))
+
+
+def word_px(words, w, h):
+    """the size every word of a selector fits its cell at (the same for all, so the bar reads evenly)"""
+    px = min(P.BAR_TEXT, h - 5)
+    while px > 7 and max(label_font(px * SS).getlength(t) for t in words) > (w - 6) * SS:
+        px -= 1
+    return px
 
 
 def bar_looks(src, rects):

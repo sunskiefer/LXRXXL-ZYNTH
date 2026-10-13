@@ -142,7 +142,7 @@ static void set_param(void *p, const char *k, const char *v)
             Sound *snd = &x->p.snd[x->ui.track];
             if (m->id == SP_VOICE) sound_setVoice(snd, (int)read_value(m, v));
             else if (m->id >= SP_V1 && m->id <= SP_V6) sound_setSlider(snd, m->id - SP_V1, read_value(m, v));
-            else snd->v[m->id] = read_value(m, v);
+            else { snd->v[m->id] = read_value(m, v); sound_sync(snd); }
             ui_soundTouched(x, m->id);
             break;
         }
@@ -153,6 +153,12 @@ static void set_param(void *p, const char *k, const char *v)
         case PK_UI:
             if (m->id == UI_TRACK) ui_press(x, B_TRK1 + (int)read_value(m, v));
             else if (m->id == UI_SLOT) preset_slot(x, (int)read_value(m, v));
+            else if (m->id == UI_TIMBRE || m->id == UI_MORPH) {   /* the voice's slider behind the front knob */
+                Sound *snd = &x->p.snd[x->ui.track];
+                const int k = ENG_MACROS[(int)(snd->v[SP_VOICE] + 0.5f) % NUM_ENGINES][m->id == UI_MORPH];
+                sound_setSlider(snd, k, read_value(m, v));
+                ui_soundTouched(x, SP_V1 + k);
+            }
             else if (m->id == UI_RND_AMT || m->id == UI_SRND_AMT) {
                 char pc[8];
                 const uint8_t a = (uint8_t)read_value(m, v);
@@ -231,6 +237,11 @@ static int get_param(void *p, const char *k, char *buf, int n)
             else if (m->id == UI_SLOT) snprintf(t, sizeof t, "%d", x->pr.slot);
             else if (m->id == UI_RND_AMT) snprintf(t, sizeof t, "%d", x->rnd2.amt);
             else if (m->id == UI_SRND_AMT) snprintf(t, sizeof t, "%d", x->rnd2.seqAmt);
+            else if (m->id == UI_TIMBRE || m->id == UI_MORPH) {
+                const Sound *snd = &x->p.snd[x->ui.track];
+                const int k = ENG_MACROS[(int)(snd->v[SP_VOICE] + 0.5f) % NUM_ENGINES][m->id == UI_MORPH];
+                snprintf(t, sizeof t, "%.5f", snd->v[SP_V1 + k]);
+            }
             else snprintf(t, sizeof t, "%.5f", ui_knobGet(x, m->id == UI_SEL ? 0 : 1));
             return put(buf, n, t);
         case PK_MIX: {

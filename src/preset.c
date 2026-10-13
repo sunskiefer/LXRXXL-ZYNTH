@@ -114,7 +114,7 @@ static int write_async(const char *dir, const char *path, char *buf, size_t len)
 
 static char *sound_text(const Sound *s, size_t *len)
 {
-    size_t cap = 8192, n;
+    size_t cap = 65536, n;
     char *b = malloc(cap);
     int k, e;
     if (!b) return NULL;
@@ -123,8 +123,12 @@ static char *sound_text(const Sound *s, size_t *len)
         if (SOUND_DEFS[k].nopts) n += (size_t)snprintf(b + n, cap - n, "%s=%d\n", SOUND_DEFS[k].key, (int)s->v[k]);
         else n += (size_t)snprintf(b + n, cap - n, "%s=%.6f\n", SOUND_DEFS[k].key, s->v[k]);
     }
-    for (e = 0; e < NUM_ENGINES; e++)   /* every voice's sliders as this track left them */
-        for (k = 0; k < ENG_SLIDERS && n < cap; k++) n += (size_t)snprintf(b + n, cap - n, "m%d_%d=%.6f\n", e, k, s->mem[e][k]);
+    for (e = 0; e < NUM_ENGINES; e++)   /* every voice's whole sound as this track left it: m<voice>.<key>= */
+        for (k = 0; k < SP_COUNT && n < cap; k++) {
+            if (k == SP_VOICE || k == SP_LEVEL || k == SP_PAN) continue;
+            if (SOUND_DEFS[k].nopts) n += (size_t)snprintf(b + n, cap - n, "m%d.%s=%d\n", e, SOUND_DEFS[k].key, (int)s->full[e][k]);
+            else n += (size_t)snprintf(b + n, cap - n, "m%d.%s=%.6f\n", e, SOUND_DEFS[k].key, s->full[e][k]);
+        }
     *len = n < cap ? n : cap - 1;
     return b;
 }
@@ -205,13 +209,23 @@ static int parse_sound(const char *text, Sound *s)
     if (strncmp(p, SOUND_MAGIC, strlen(SOUND_MAGIC))) return 0;
     init_sound(s);   /* a key the file lacks: its default */
     while ((p = strchr(p, '\n'))) {
-        char key[48];
+        char key[48], sub[40];
         float v;
         int e, j;
         p++;
         if (sscanf(p, "%47[^=\n]=%f", key, &v) != 2) continue;
-        if (sscanf(key, "m%d_%d", &e, &j) == 2) {
-            if (e >= 0 && e < NUM_ENGINES && j >= 0 && j < ENG_SLIDERS && v >= 0.f && v <= 1.f) s->mem[e][j] = v;
+        if (sscanf(key, "m%d.%39s", &e, sub) == 2) {   /* a voice's whole sound (0.2.0) */
+            if (e < 0 || e >= NUM_ENGINES) continue;
+            for (k = 0; k < SP_COUNT; k++)
+                if (!strcmp(sub, SOUND_DEFS[k].key)) {
+                    const float mx = SOUND_DEFS[k].nopts ? (float)(SOUND_DEFS[k].nopts - 1) : 1.f;
+                    if (k != SP_VOICE && v >= 0.f && v <= mx) s->full[e][k] = SOUND_DEFS[k].nopts ? (float)(int)(v + 0.5f) : v;
+                    break;
+                }
+            continue;
+        }
+        if (sscanf(key, "m%d_%d", &e, &j) == 2) {   /* 0.1.0: a voice's six sliders */
+            if (e >= 0 && e < NUM_ENGINES && j >= 0 && j < ENG_SLIDERS && v >= 0.f && v <= 1.f) s->full[e][SP_V1 + j] = v;
             continue;
         }
         for (k = 0; k < SP_COUNT; k++)
@@ -221,7 +235,10 @@ static int parse_sound(const char *text, Sound *s)
                 break;
             }
     }
-    sound_sync(s);   /* the sliders of the voice in use are the file's v1..v6 */
+    if (!strstr(text, "\nsustain=")) {   /* a 0.1.0 sound: VCA ENV fully down held the note */
+        s->v[SP_SUSTAIN] = s->v[SP_VCA_DEC] <= 0.02f ? 1.f : 0.f;
+    }
+    sound_sync(s);   /* the sound in use is the file's */
     return got > 0;
 }
 

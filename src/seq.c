@@ -28,6 +28,8 @@ static const uint16_t SCALES[NUM_SCALES] = {
 static const char *const SCALE_NAMES[NUM_SCALES] = {"CHR", "MAJ", "MIN", "DOR", "PHR", "LYD", "MIX", "LOC", "HMN",
                                                     "PMJ", "PMN", "BLU"};
 
+uint16_t seq_scaleMask(uint8_t scale) { return SCALES[scale < NUM_SCALES ? scale : 0]; }
+
 const char *seq_scaleName(uint8_t s) { return SCALE_NAMES[s < NUM_SCALES ? s : 0]; }
 
 /* the nearest scale note at or below (root C) */
@@ -156,7 +158,11 @@ static void fire_step(Bl *x, uint32_t n)
             if (note < 0) note = 0;
             if (note > 127) note = 127;
             x->ui.lastNote[t] = (uint8_t)note;
-            voice_noteOn(&x->v[t], &x->p.snd[t], (float)note, acc ? 1.f : 0.8f, acc, wasSliding, penv, mod);
+            {
+                const uint8_t vb = bl_vel(x, bl_trackSrc(x, t))[s];   /* 0: as 0.1.0: 100, accented 127 */
+                const float vel = vb ? vb / 127.f : acc ? 1.f : 0.8f;
+                voice_noteOn(&x->v[t], &x->p.snd[t], (float)note, vel, acc, wasSliding, penv, mod);
+            }
             if (st->f & ST_SLIDE) { x->seq.slideHeld[t] = 1; x->seq.gateOff[t] = -1; }
             else x->seq.gateOff[t] = n + 0.5;
         }
@@ -277,32 +283,14 @@ void seq_recordNote(Bl *x, uint8_t track, uint8_t note, uint8_t vel)
         x->ui.sel = (uint8_t)((x->ui.sel + 1) % (tp->len ? tp->len : 16));
         x->ui.bar = (uint8_t)(x->ui.sel / 16);
     }
-    tp->s[s].f = (uint8_t)((tp->s[s].f & ~ST_ACC) | ST_GATE | (vel > 100 ? ST_ACC : 0));
+    tp->s[s].f = (uint8_t)((tp->s[s].f & ~ST_ACC) | ST_GATE | (vel >= 112 ? ST_ACC : 0));
     tp->s[s].note = note;
+    bl_vel(x, track)[s] = vel > 127 ? 127 : vel;   /* the key's velocity, as played */
     x->displayRev++;
 }
 
-/* RND PATT: a new line on the track, in its scale */
+/* RND PATT (SHIFT + step 11): STEP RANDOM on the track, at the STEP RANDOM amount */
 void seq_randomTrack(Bl *x, uint8_t track)
 {
-    TrackPat *tp = &bl_pat(x)->t[track];
-    const uint8_t scale = tp->scale ? tp->scale : 2;   /* chromatic tracks get a minor line */
-    const int L = tp->len ? tp->len : 16;
-    int i, base = 36;
-    for (i = 0; i < L && i < NUM_STEPS; i++) {
-        uint32_t r = bl_rand(&x->rnd);
-        Step *st = &tp->s[i];
-        int n = base;
-        st->f = 0;
-        if ((r & 0xff) < 165 || i == 0) {
-            st->f = ST_GATE;
-            r = bl_rand(&x->rnd);
-            if ((r & 0xff) < 64) st->f |= ST_ACC;
-            if (((r >> 8) & 0xff) < 50) st->f |= ST_SLIDE;
-            n = base + (int)((r >> 16) % 13) - 2;
-            if (((r >> 24) & 0xff) < 40) n += 12;
-            st->note = seq_quantise((uint8_t)n, scale, 0);
-        }
-    }
-    x->displayRev++;
+    rnd_steps(x, x->rnd2.seqAmt ? x->rnd2.seqAmt * 10 : 50, track);
 }

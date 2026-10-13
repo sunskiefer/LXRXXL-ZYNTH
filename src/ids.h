@@ -43,8 +43,10 @@ enum {
     SP_MOD_DEST,
     SP_MOD_SYNC,
     SP_VCA_REL,
+    SP_SUSTAIN,
     SP_COUNT
 };
+#define SP_COUNT_V1 42   /* 0.1.0's */
 enum {
     G_DLY_TIME,
     G_DLY_IN,

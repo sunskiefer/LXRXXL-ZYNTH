@@ -16,7 +16,7 @@
   },
   {
    "key": "vca_env",
-   "name": "VCA ENV",
+   "name": "DECAY",
    "default": 0.0,
    "min": 0,
    "max": 1
@@ -65,14 +65,14 @@
   },
   {
    "key": "lfo_rate",
-   "name": "LFO RATE",
+   "name": "MOD RATE",
    "default": 0.4,
    "min": 0,
    "max": 1
   },
   {
    "key": "lfo_lvl",
-   "name": "LFO LVL",
+   "name": "MOD DEPTH",
    "default": 0.0,
    "min": 0,
    "max": 1
@@ -231,7 +231,7 @@
   },
   {
    "key": "vca_atk",
-   "name": "VCA ATK",
+   "name": "ATTACK",
    "default": 0.0,
    "min": 0,
    "max": 1
@@ -1454,6 +1454,27 @@
     "100%"
    ],
    "default": 5
+  },
+  {
+   "key": "timbre",
+   "name": "TIMBRE",
+   "min": 0,
+   "max": 1,
+   "default": 0.5
+  },
+  {
+   "key": "morph",
+   "name": "MORPH",
+   "min": 0,
+   "max": 1,
+   "default": 0.5
+  },
+  {
+   "key": "sustain",
+   "name": "SUSTAIN",
+   "default": 1.0,
+   "min": 0,
+   "max": 1
   }
  ]
 }

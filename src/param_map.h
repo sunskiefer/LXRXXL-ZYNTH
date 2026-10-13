@@ -5,7 +5,7 @@
 #define UNUSED __attribute__((unused))
 
 enum { PK_SOUND, PK_GLOBAL, PK_UI, PK_BUTTON, PK_SHOW, PK_MIX };
-enum { UI_SEL, UI_NOTE, UI_TRACK, UI_SLOT, UI_RND_AMT, UI_SRND_AMT };
+enum { UI_SEL, UI_NOTE, UI_TRACK, UI_SLOT, UI_RND_AMT, UI_SRND_AMT, UI_TIMBRE, UI_MORPH };
 enum { SH_DISP1, SH_DISP2, SH_DISP3, SH_DOT1, SH_DOT2, SH_DOT3, SH_READOUT };
 
 typedef struct { uint8_t kind, id, nopts; } ParamMap;
@@ -168,6 +168,9 @@ static const ParamMap PARAM_MAP[P_COUNT] UNUSED = {
     {PK_BUTTON, B_SRND, 0},   /* srnd */
     {PK_UI, UI_RND_AMT, 11},   /* rnd_amt */
     {PK_UI, UI_SRND_AMT, 11},   /* srnd_amt */
+    {PK_UI, UI_TIMBRE, 0},   /* timbre */
+    {PK_UI, UI_MORPH, 0},   /* morph */
+    {PK_SOUND, SP_SUSTAIN, 0},   /* sustain */
 };
 
 typedef struct { const char *key, *name; float def; uint8_t nopts; const char *const *opts; } SoundDef;
@@ -184,15 +187,15 @@ static const char *const OPTS_SP_MOD_SYNC[] UNUSED = {"FREE", "TEMPO"};
 static const SoundDef SOUND_DEFS[] UNUSED = {
     {"drive", "DRIVE", 0.1f, 0, 0},
     {"detune", "DETUNE", 0.0f, 0, 0},
-    {"vca_env", "VCA ENV", 0.0f, 0, 0},
+    {"vca_env", "DECAY", 0.0f, 0, 0},
     {"vcf_env", "VCF ENV", 0.35f, 0, 0},
     {"resonance", "RESONANCE", 0.3f, 0, 0},
     {"cutoff", "CUTOFF", 0.6f, 0, 0},
     {"fm_lvl", "FM LVL", 0.0f, 0, 0},
     {"sub_lvl", "SUB LVL", 0.0f, 0, 0},
     {"noise_lvl", "NOISE LVL", 0.0f, 0, 0},
-    {"lfo_rate", "LFO RATE", 0.4f, 0, 0},
-    {"lfo_lvl", "LFO LVL", 0.0f, 0, 0},
+    {"lfo_rate", "MOD RATE", 0.4f, 0, 0},
+    {"lfo_lvl", "MOD DEPTH", 0.0f, 0, 0},
     {"env_cv", "ENV/CV LVL", 0.0f, 0, 0},
     {"wave", "WAVE", 1.0f, 3, OPTS_SP_WAVE},
     {"fmode", "FILTER", 1.0f, 2, OPTS_SP_FMODE},
@@ -211,7 +214,7 @@ static const SoundDef SOUND_DEFS[] UNUSED = {
     {"slide_time", "SLIDE TIME", 0.3f, 0, 0},
     {"vcf_atk", "VCF ATK", 0.0f, 0, 0},
     {"vcf_dec", "VCF DEC", 0.45f, 0, 0},
-    {"vca_atk", "VCA ATK", 0.0f, 0, 0},
+    {"vca_atk", "ATTACK", 0.0f, 0, 0},
     {"pitch_dec", "PITCH DEC", 0.3f, 0, 0},
     {"level", "LEVEL", 0.8f, 0, 0},
     {"pan", "PAN", 0.5f, 0, 0},
@@ -224,6 +227,7 @@ static const SoundDef SOUND_DEFS[] UNUSED = {
     {"mod_dest", "MOD DEST", 1.0f, 4, OPTS_SP_MOD_DEST},
     {"mod_sync", "MOD SYNC", 0.0f, 2, OPTS_SP_MOD_SYNC},
     {"vca_rel", "RELEASE", 0.2f, 0, 0},
+    {"sustain", "SUSTAIN", 1.0f, 0, 0},
 };
 static const char *const OPTS_G_DLY_MODE[] UNUSED = {"TAPE", "DIGITAL"};
 static const char *const OPTS_G_GD_MODE[] UNUSED = {"GATE", "DUCK"};

@@ -76,6 +76,25 @@ const EngDef ENG_DEFS[NUM_ENGINES] = {
 };
 
 /* ---------------------------------------------------------------- option names */
+const int8_t ENG_MACROS[NUM_ENGINES][2] = {
+    [ENG_ANALOG] = {1, 4},     /* PULSE WIDTH, SYNC */
+    [ENG_TRIO] = {3, 4},       /* DETUNE, LEVEL 2 */
+    [ENG_FM6] = {2, 3},        /* MOD INDEX, FEEDBACK */
+    [ENG_FM4] = {3, 4},        /* MOD INDEX, FEEDBACK */
+    [ENG_PHASE] = {1, 2},      /* AMOUNT, ENV AMOUNT */
+    [ENG_WAVE] = {1, 4},       /* POS X, WARP AMOUNT */
+    [ENG_CHIP] = {1, 5},       /* BITS, SWEEP */
+    [ENG_MACRO] = {1, 2},      /* TIMBRE, COLOR */
+    [ENG_WHEEL] = {2, 5},      /* BRIGHT, LESLIE */
+    [ENG_VOICE] = {0, 1},      /* VOWEL, FORMANT */
+    [ENG_PHYS] = {1, 2},       /* STRUCTURE, BRIGHT */
+    [ENG_GRAIN] = {1, 2},      /* DENSITY, POSITION */
+    [ENG_NOISE] = {1, 2},      /* COLOR, RESO */
+    [ENG_LXR_TONE] = {1, 2},   /* FM AMOUNT, FM FREQ */
+    [ENG_LXR_METAL] = {1, 2},  /* SPREAD, FM AMOUNT */
+    [ENG_BAZZ] = {1, 5},       /* WAVE POS, TONE */
+};
+
 static const char *const AN_INT[9] = {"0", "+3", "+4", "+5", "+7", "+12", "+19", "+24", "-12"};
 static const char *const PD_WAVE[8] = {"SAW", "SQUARE", "PULSE", "DOUBLE SINE", "SAW PULSE", "RESO SAW", "RESO TRI",
                                        "RESO TRAP"};

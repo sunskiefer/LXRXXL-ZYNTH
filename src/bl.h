@@ -44,8 +44,29 @@ typedef struct {
 
 typedef struct {
     float v[SP_COUNT];  /* 0..1, or an option's index; v[SP_V1..SP_V6]: the six sliders of the voice in use */
-    float mem[NUM_ENGINES][ENG_SLIDERS];   /* each voice's sliders as last left on this track (switching back finds them) */
+    float full[NUM_ENGINES][SP_COUNT];   /* each voice's whole sound as last left on this track (its home sound until
+                                            then): switching back finds it; LEVEL and PAN stay the track's */
 } Sound;
+
+/* STEP RANDOM: the harmony of a pattern (every track generated in it shares it) and each track's settings */
+typedef struct {
+    uint8_t valid;      /* 0: none yet (the first STEP RANDOM makes one) */
+    uint8_t root;       /* 0..11, C = 0 */
+    uint8_t mode;       /* HARM_MODES index */
+    uint8_t prog;       /* PROGRESSIONS index */
+    uint8_t color;      /* the chords: triads, sevenths, sus 2, sus 4, add 9 */
+    uint8_t pad[3];
+    uint32_t seed;
+} Harmony;
+
+enum { RS_AUTO, RS_CHORD, RS_ARP, RS_LEAD, RS_BASS, RS_HITS, RS_COUNT };
+enum { RV_FLAT, RV_GROOVE, RV_HUMAN, RV_SWELL, RV_COUNT };
+typedef struct {
+    uint8_t lenOpt;     /* the length STEP RANDOM writes: 4 8 12 16 24 32 48 64 steps */
+    uint8_t vel;        /* RV_*: how it sets the steps' velocities */
+    uint8_t style;      /* RS_*: what the track plays (AUTO: from its voice) */
+    uint8_t pad;
+} RndSet;
 
 typedef struct {
     Sound snd[NUM_TRACKS];
@@ -63,6 +84,10 @@ typedef struct {
     float master;             /* 0..1, 0.8 = unity */
     uint8_t solos;            /* bit t: track t soloed */
     uint8_t pad2[3];
+    /* 0.2.0: STEP RANDOM's harmonies and settings, and every step's velocity (0: as before: 100, or 127 accented) */
+    Harmony harm[NUM_PATTERNS];
+    RndSet rset[NUM_TRACKS];
+    uint8_t vel[NUM_PATTERNS][NUM_TRACKS][NUM_STEPS];
 } Project;
 
 /* ---------------------------------------------------------------- the voice (voice.c) */
@@ -128,7 +153,7 @@ typedef struct {
 /* ---------------------------------------------------------------- the front panel modes (ui.c) */
 enum Mode {
     MD_NORMAL, MD_ACC, MD_SLIDE, MD_MOD, MD_PENV, MD_LAST, MD_PLAYMODE, MD_TRANSP, MD_SCALE, MD_ARP, MD_LFO,
-    MD_BANK, MD_PATTERN
+    MD_BANK, MD_PATTERN, MD_RNDSET
 };
 
 typedef struct Bl {
@@ -136,6 +161,7 @@ typedef struct Bl {
     uint8_t patSlot;                 /* the pattern that plays and that the keys edit (0..63) */
     uint8_t nextPat;                 /* queued for the pattern's end (0xff none) */
     Pattern clip;                    /* COPY / PASTE: one track's steps (t[0]) */
+    uint8_t clipVel[NUM_STEPS];      /* and their velocities */
     uint8_t clipValid;
 
     Voice v[NUM_TRACKS];
@@ -217,7 +243,10 @@ void bl_render(Bl *x, float *L, float *R, int n);
 float bl_tempo(Bl *x);                        /* the tempo in use (MPC's or the instance's own) */
 const TrackPat *bl_trackPat(Bl *x, int t);    /* what track t plays: its own steps or, linked, the track's it follows */
 static inline Pattern *bl_pat(Bl *x) { return &x->p.pats[x->patSlot]; }
+/* a step's velocity (0: the default) in the playing pattern */
+static inline uint8_t *bl_vel(Bl *x, int t) { return x->p.vel[x->patSlot][t]; }
 static inline TrackPat *bl_edit(Bl *x) { return &x->p.pats[x->patSlot].t[x->ui.track]; }   /* what the keys edit */
+int bl_trackSrc(Bl *x, int t);                /* the track whose steps track t plays (itself, or the one it is linked to) */
 
 /* voice.c */
 void voice_init(Voice *v);
@@ -232,11 +261,23 @@ void voice_detach(Voice *v);
 void sound_setVoice(Sound *s, int type);      /* change the voice: the sliders go to (and come back from) its memory */
 void sound_setSlider(Sound *s, int k, float v);   /* V1..V6: the voice in use's slider (and its memory) */
 void sound_resetVoice(Sound *s, int type);    /* every slider of that voice back to its default */
-void sound_sync(Sound *s);                    /* v[SP_V1..V6] written into the voice in use's memory */
+void sound_sync(Sound *s);                    /* v[] written into the voice in use's memory */
+void sound_home(int type, float *v);          /* a voice's home sound: the chain set so the voice sounds as itself */
 
 /* random.c */
-void rnd_sounds(Bl *x, int pct, int track);   /* SOUND RANDOM: every track (track < 0) or one */
-void rnd_steps(Bl *x, int pct, int track);    /* STEP RANDOM */
+const char *rnd_sounds(Bl *x, int pct, int track);   /* SOUND RANDOM: one track, or every track (track < 0); the
+                                                        character it went for (one track) */
+/* seqgen.c */
+void rnd_steps(Bl *x, int pct, int track);    /* STEP RANDOM: one track, or every track (track < 0) */
+void rnd_newHarmony(Bl *x);                   /* a new harmony for the playing pattern */
+Harmony *rnd_harmony(Bl *x);                  /* the playing pattern's harmony (made when it has none) */
+const char *rnd_modeName(int mode, int full);
+const char *rnd_styleName(int style);
+int rnd_styleOf(Bl *x, int track);
+void rnd_harmonyText(Bl *x, char *buf, int n);  /* "C MINOR   I-VI-III-VII   SEVENTHS" */
+void rnd_harmonyNudge(Bl *x, int what, int to); /* 0: the root, 1: the mode, 2: a new progression and colour */            /* the style a track plays (AUTO resolved from its voice) */
+extern const uint8_t RND_LENGTHS[8];
+#define NUM_HARM_MODES 7
 
 /* fx.c */
 void fx_init(Fx *f);
@@ -258,6 +299,7 @@ void seq_recordNote(Bl *x, uint8_t track, uint8_t note, uint8_t vel);
 void seq_randomTrack(Bl *x, uint8_t track);
 int seq_hasFlag(const TrackPat *tp, uint8_t flag);
 uint8_t seq_quantise(uint8_t note, uint8_t scale, uint8_t root);
+uint16_t seq_scaleMask(uint8_t scale);
 const char *seq_scaleName(uint8_t s);
 
 /* ui.c */

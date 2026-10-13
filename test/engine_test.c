@@ -283,7 +283,11 @@ int main(int argc, char **argv)
         set(in, "trk2", "1");
         setf(in, "cutoff", 0.99f);
         set(in, "v_reset", "1");
-        CHECK(fabsf(x->p.snd[1].v[SP_CUTOFF] - SOUND_DEFS[SP_CUTOFF].def) < 1e-6f, "VOICE RESET: track 2's cutoff back (%f)", x->p.snd[1].v[SP_CUTOFF]);
+        {
+            float home[SP_COUNT];
+            sound_home((int)x->p.snd[1].v[SP_VOICE], home);
+            CHECK(fabsf(x->p.snd[1].v[SP_CUTOFF] - home[SP_CUTOFF]) < 1e-6f, "VOICE RESET: track 2's cutoff back home (%f)", x->p.snd[1].v[SP_CUTOFF]);
+        }
         CHECK((int)x->p.snd[1].v[SP_VOICE] == ENG_FM6, "VOICE RESET keeps the voice (%g)", x->p.snd[1].v[SP_VOICE]);
         set(in, "shift", "1"); set(in, "v_reset", "1");
         CHECK(x->p.mutes == 0xff, "SHIFT + VOICE RESET mutes every track (%02x)", x->p.mutes);
@@ -313,57 +317,206 @@ int main(int argc, char **argv)
             play(in, &ppq, 120, 0.8, 0, &rms, NULL);
         }
     }
-    /* ---- VOICE, V1-V6 and the voice memory; VOICE < > */
+    /* ---- VOICE, V1-V6 and each voice's whole sound; home sounds; VOICE RESET; VOICE < > */
     {
         char b[128] = "";
+        float home[SP_COUNT];
         set(in, "trk2", "1");
+        setf(in, "level", 0.66f);
+        setf(in, "pan", 0.3f);
         set(in, "voice", "2");   /* FM6 */
         setf(in, "v1", 0.9f);
-        set(in, "voice", "11");  /* GRAIN */
+        setf(in, "cutoff", 0.21f);
+        setf(in, "vca_env", 0.7f);
+        set(in, "voice", "11");  /* GRAIN: its home sound, not FM6's chain */
+        sound_home(ENG_GRAIN, home);
         CHECK(fabsf(x->p.snd[1].v[SP_V1] - ENG_DEFS[ENG_GRAIN].def[0]) < 1e-5f, "GRAIN starts at its defaults (%f)", x->p.snd[1].v[SP_V1]);
+        CHECK(fabsf(x->p.snd[1].v[SP_CUTOFF] - home[SP_CUTOFF]) < 1e-5f, "GRAIN starts with its home chain (cutoff %f)", x->p.snd[1].v[SP_CUTOFF]);
+        CHECK(x->p.snd[1].v[SP_SUSTAIN] > 0.99f && x->p.snd[1].v[SP_VCA_ATK] > 0.2f, "GRAIN's home is held (SUSTAIN), with an attack");
+        CHECK(fabsf(x->p.snd[1].v[SP_LEVEL] - 0.66f) < 1e-5f && fabsf(x->p.snd[1].v[SP_PAN] - 0.3f) < 1e-5f, "the level and pan stay the track's");
         setf(in, "v1", 0.1f);
         set(in, "voice", "2");
         CHECK(fabsf(x->p.snd[1].v[SP_V1] - 0.9f) < 1e-5f, "back on FM6: its V1 as left (%f)", x->p.snd[1].v[SP_V1]);
-        CHECK(fabsf(x->p.snd[1].mem[ENG_GRAIN][0] - 0.1f) < 1e-5f, "GRAIN's V1 remembered (%f)", x->p.snd[1].mem[ENG_GRAIN][0]);
+        CHECK(fabsf(x->p.snd[1].v[SP_CUTOFF] - 0.21f) < 1e-5f && fabsf(x->p.snd[1].v[SP_VCA_DEC] - 0.7f) < 1e-5f,
+              "back on FM6: its chain as left (cutoff %f)", x->p.snd[1].v[SP_CUTOFF]);
+        CHECK(fabsf(x->p.snd[1].full[ENG_GRAIN][SP_V1] - 0.1f) < 1e-5f, "GRAIN's sound remembered (%f)", x->p.snd[1].full[ENG_GRAIN][SP_V1]);
         E->get_param(in, "readout", b, sizeof b);
         CHECK(strstr(b, "VOICE") && strstr(b, "FM6"), "the readout names the voice ('%s')", b);
         setf(in, "v3", 0.5f);
         E->get_param(in, "readout", b, sizeof b);
         CHECK(strstr(b, "FM6 MOD INDEX") != NULL, "the readout names the voice's slider ('%s')", b);
+        set(in, "v_reset", "1");
+        sound_home(ENG_FM6, home);
+        CHECK((int)x->p.snd[1].v[SP_VOICE] == ENG_FM6 && fabsf(x->p.snd[1].v[SP_CUTOFF] - home[SP_CUTOFF]) < 1e-5f &&
+              fabsf(x->p.snd[1].v[SP_V1] - ENG_DEFS[ENG_FM6].def[0]) < 1e-5f, "VOICE RESET: FM6's home sound");
+        CHECK(fabsf(x->p.snd[1].v[SP_LEVEL] - 0.66f) < 1e-5f, "VOICE RESET keeps the level");
+        CHECK(fabsf(x->p.snd[1].full[ENG_GRAIN][SP_V1] - 0.1f) < 1e-5f, "VOICE RESET leaves the other voices' sounds");
         set(in, "v_next", "1");
         CHECK((int)x->p.snd[1].v[SP_VOICE] == ENG_FM4, "VOICE > (%g)", x->p.snd[1].v[SP_VOICE]);
         set(in, "v_prev", "1"); set(in, "v_prev", "1"); set(in, "v_prev", "1"); set(in, "v_prev", "1");
         CHECK((int)x->p.snd[1].v[SP_VOICE] == ENG_BAZZ, "VOICE < round to BAZZ (%g)", x->p.snd[1].v[SP_VOICE]);
         CHECK((int)getf(in, "voice") == ENG_BAZZ, "MPC reads the voice (%g)", getf(in, "voice"));
+        CHECK(x->p.snd[1].v[SP_VCA_DEC] > 0.3f && x->p.snd[1].v[SP_RESO] > 0.4f, "BAZZ's home: BAZZLINE's bass");
         set(in, "trk1", "1");
+    }
+    /* ---- TIMBRE and MORPH: the voice's two sliders that change it most */
+    {
+        char b[128] = "";
+        set(in, "trk3", "1");
+        set(in, "voice", "2");   /* FM6: MOD INDEX, FEEDBACK */
+        setf(in, "timbre", 0.77f);
+        setf(in, "morph", 0.33f);
+        CHECK(fabsf(x->p.snd[2].v[SP_V3] - 0.77f) < 1e-5f && fabsf(x->p.snd[2].v[SP_V4] - 0.33f) < 1e-5f, "FM6: TIMBRE = MOD INDEX, MORPH = FEEDBACK");
+        CHECK(fabsf(getf(in, "timbre") - 0.77f) < 1e-4f, "MPC reads TIMBRE (%f)", getf(in, "timbre"));
+        E->get_param(in, "readout", b, sizeof b);
+        CHECK(strstr(b, "MORPH") && strstr(b, "FEEDBACK"), "the readout names MORPH's slider ('%s')", b);
+        set(in, "voice", "11");  /* GRAIN: DENSITY, POSITION */
+        CHECK(fabsf(getf(in, "timbre") - x->p.snd[2].v[SP_V2]) < 1e-4f, "TIMBRE follows the voice");
+        set(in, "trk1", "1");
+    }
+    /* ---- a 0.1.0 project (state version 1) loads: its sounds, the voices' sliders, the patterns */
+    {
+        typedef struct { float v[SP_COUNT_V1]; float mem[NUM_ENGINES][ENG_SLIDERS]; } SoundV1;
+        typedef struct {
+            SoundV1 snd[NUM_TRACKS]; Pattern pats[NUM_PATTERNS]; float g[G_COUNT]; float bpm;
+            uint8_t links, mutes, gdOn, dlySync; float dlyTap; uint8_t pad[4]; float send[NUM_TRACKS]; float master;
+            uint8_t solos; uint8_t pad2[3];
+        } ProjectV1;
+        static ProjectV1 o;
+        static char text[2 * sizeof(ProjectV1) + 128];
+        static const char hex[] = "0123456789abcdef";
+        void *in3 = E->create(NULL);
+        Bl *z = (Bl *)in3;
+        int t, e, k, h;
+        size_t i;
+        memset(&o, 0, sizeof o);
+        for (t = 0; t < NUM_TRACKS; t++) {
+            for (k = 0; k < SP_COUNT_V1; k++) o.snd[t].v[k] = SOUND_DEFS[k].def;
+            o.snd[t].v[SP_VCA_DEC] = t & 1 ? 0.5f : 0.f;
+            o.snd[t].v[SP_VOICE] = (float)(t * 2);
+            o.snd[t].v[SP_CUTOFF] = 0.1f * t;
+            for (e = 0; e < NUM_ENGINES; e++) for (k = 0; k < ENG_SLIDERS; k++) o.snd[t].mem[e][k] = 0.01f * (e + k);
+        }
+        memcpy(o.pats, x->p.pats, sizeof o.pats);
+        o.bpm = 133; o.master = 0.7f; o.mutes = 5;
+        for (k = 0; k < G_COUNT; k++) o.g[k] = GLOBAL_DEFS[k].def;
+        for (t = 0; t < NUM_TRACKS; t++) o.send[t] = 1.f;
+        h = snprintf(text, 128, "LXRXXL-ZYNTH 1 %u 3 2\n", (unsigned)sizeof o);
+        for (i = 0; i < sizeof o; i++) { text[h + 2 * i] = hex[((uint8_t *)&o)[i] >> 4]; text[h + 2 * i + 1] = hex[((uint8_t *)&o)[i] & 15]; }
+        text[h + 2 * sizeof o] = 0;
+        set(in3, "state", text);
+        CHECK(z->p.bpm == 133 && z->p.master == 0.7f && z->p.mutes == 5 && z->patSlot == 3 && z->ui.track == 2, "0.1.0: the project's settings");
+        CHECK(!memcmp(z->p.pats, x->p.pats, sizeof z->p.pats), "0.1.0: the patterns");
+        for (t = 0; t < NUM_TRACKS; t++) {
+            CHECK((int)z->p.snd[t].v[SP_VOICE] == t * 2 && fabsf(z->p.snd[t].v[SP_CUTOFF] - 0.1f * t) < 1e-6f, "0.1.0: T%d's sound as it was", t + 1);
+            CHECK(fabsf(z->p.snd[t].full[5][SP_V2] - 0.06f) < 1e-6f, "0.1.0: T%d's voices' sliders remembered", t + 1);
+            CHECK(z->p.rset[t].lenOpt == 3, "0.1.0: STEP RANDOM's settings at their defaults");
+            CHECK(z->p.snd[t].v[SP_SUSTAIN] == (t & 1 ? 0.f : 1.f), "0.1.0: VCA ENV down = SUSTAIN 100 %%, else 0 (T%d)", t + 1);
+        }
+        E->destroy(in3);
+    }
+    /* ---- every voice's home sound: held voices keep sounding while the key is, struck ones ring out */
+    {
+        int ty;
+        for (ty = 0; ty < NUM_ENGINES; ty++) {
+            float h[SP_COUNT];
+            sound_home(ty, h);
+            CHECK(h[SP_DRIVE] <= 0.2f && h[SP_PITCH_AMT] == 0.f && h[SP_NOISE] == 0.f && h[SP_FM] == 0.f,
+                  "%s's home: a clean chain", ENG_DEFS[ty].name);
+            CHECK(ty == ENG_BAZZ || h[SP_CUTOFF] >= 0.7f, "%s's home: the filter open (%f)", ENG_DEFS[ty].name, h[SP_CUTOFF]);
+        }
     }
     /* ---- the randomizers */
     {
         Project before = x->p;
         int changed = 0, t, v;
         set(in, "rnd_amt", "10");
-        set(in, "rnd", "1");
+        set(in, "shift", "1");
+        set(in, "rnd", "1");   /* SHIFT: every track */
         for (t = 0; t < NUM_TRACKS; t++) {
             CHECK(x->p.snd[t].v[SP_VOICE] == before.snd[t].v[SP_VOICE], "SOUND RANDOM keeps the voice (T%d)", t + 1);
             CHECK(x->p.snd[t].v[SP_LEVEL] == before.snd[t].v[SP_LEVEL], "SOUND RANDOM keeps the level (T%d)", t + 1);
-            CHECK(x->p.snd[t].v[SP_CUTOFF] >= 0.3f - 1e-6f, "the cutoff stays open enough (T%d %f)", t + 1, x->p.snd[t].v[SP_CUTOFF]);
+            CHECK(x->p.snd[t].v[SP_CUTOFF] >= 0.23f - 1e-6f, "the cutoff stays open enough (T%d %f)", t + 1, x->p.snd[t].v[SP_CUTOFF]);
             for (v = 0; v < SP_COUNT; v++) changed += x->p.snd[t].v[v] != before.snd[t].v[v];
-            for (v = 0; v < ENG_SLIDERS; v++)
-                CHECK(x->p.snd[t].v[SP_V1 + v] == x->p.snd[t].mem[(int)x->p.snd[t].v[SP_VOICE]][v], "the sliders and the memory agree");
+            for (v = 0; v < SP_COUNT; v++)
+                CHECK(x->p.snd[t].v[v] == x->p.snd[t].full[(int)x->p.snd[t].v[SP_VOICE]][v], "the sound and the memory agree");
         }
         CHECK(changed > 100, "SOUND RANDOM changes the sounds (%d)", changed);
         before = x->p;
-        set(in, "shift", "1");
-        set(in, "rnd", "1");
+        set(in, "rnd", "1");   /* a tap: the selected track only */
         changed = 0;
         for (t = 1; t < NUM_TRACKS; t++) for (v = 0; v < SP_COUNT; v++) changed += x->p.snd[t].v[v] != before.snd[t].v[v];
-        CHECK(changed == 0, "SHIFT + SOUND RANDOM: the selected track only (%d)", changed);
+        CHECK(changed == 0, "SOUND RANDOM: the selected track only (%d)", changed);
+        changed = 0;
+        for (v = 0; v < SP_COUNT; v++) changed += x->p.snd[0].v[v] != before.snd[0].v[v];
+        CHECK(changed > 5, "SOUND RANDOM: the selected track changed (%d)", changed);
+        {   /* C: at a low amount, the harsh controls stay low */
+            int k, bad = 0;
+            set(in, "rnd_amt", "2");
+            for (k = 0; k < 200; k++) {
+                set(in, "rnd", "1");
+                bad += x->p.snd[0].v[SP_DRIVE] > 0.25f + 0.55f * 0.04f + 1e-4f || x->p.snd[0].v[SP_RESO] > 0.45f + 0.45f * 0.04f + 1e-4f ||
+                       x->p.snd[0].v[SP_PITCH_AMT] > 0.04f + 0.4f * 0.04f + 1e-4f;
+            }
+            CHECK(bad == 0, "SOUND RANDOM at 20 %%: drive, resonance and the pitch envelope held low (%d over)", bad);
+        }
+        /* STEP RANDOM: a tap does the selected track; the others stay */
+        before = x->p;
         set(in, "srnd_amt", "5");
         set(in, "srnd", "1");
+        CHECK(!memcmp(&before.pats[x->patSlot].t[1], &bl_pat(x)->t[1], sizeof(TrackPat)), "STEP RANDOM: the other tracks stay");
         {
             int gates = 0;
-            for (t = 0; t < NUM_TRACKS; t++) for (v = 0; v < 16; v++) gates += (bl_pat(x)->t[t].s[v].f & ST_GATE) != 0;
-            CHECK(gates >= 8 * 3 && gates <= 8 * 9, "STEP RANDOM at 50 %%: a line on every track (%d steps)", gates);
+            for (v = 0; v < 16; v++) gates += (bl_pat(x)->t[0].s[v].f & ST_GATE) != 0;
+            CHECK(gates >= 3, "STEP RANDOM: a line on the selected track (%d steps)", gates);
+        }
+        /* setup: SHIFT + STEP RANDOM; 32 steps, SWELL, ARP; a tap in setup does every track */
+        set(in, "shift", "1");
+        set(in, "srnd", "1");
+        CHECK(x->ui.mode == MD_RNDSET, "SHIFT + STEP RANDOM: the setup");
+        set(in, "s6", "1");    /* 32 steps */
+        set(in, "s12", "1");   /* SWELL */
+        set(in, "s13", "1");   /* CHORD */
+        set(in, "s13", "1");   /* ARP */
+        CHECK(x->p.rset[0].lenOpt == 5 && x->p.rset[0].vel == RV_SWELL && x->p.rset[0].style == RS_ARP, "the setup's keys (%d %d %d)",
+              x->p.rset[0].lenOpt, x->p.rset[0].vel, x->p.rset[0].style);
+        set(in, "srnd", "1");
+        CHECK(x->ui.mode == MD_NORMAL, "STEP RANDOM in the setup: done, back to the steps");
+        CHECK(bl_pat(x)->t[0].len == 32, "STEP RANDOM writes the setup's length (%d)", bl_pat(x)->t[0].len);
+        {
+            const Harmony *h = &x->p.harm[x->patSlot];
+            const uint16_t mask = seq_scaleMask((uint8_t[]){1, 2, 3, 4, 5, 6, 8}[h->mode]);
+            int out = 0, gates = 0, risen = 0, prevV = -1;
+            CHECK(h->valid, "the pattern has a harmony");
+            for (t = 0; t < NUM_TRACKS; t++) {
+                const TrackPat *tp = &bl_pat(x)->t[t];
+                for (v = 0; v < tp->len; v++) if (tp->s[v].f & ST_GATE) {
+                    gates++;
+                    if (!tp->scale && !(mask & (1u << ((tp->s[v].note - h->root + 120) % 12)))) out++;
+                    CHECK(x->p.vel[x->patSlot][t][v] > 0, "a generated step has its velocity");
+                }
+            }
+            CHECK(gates > 8 * 4, "STEP RANDOM in the setup: every track (%d steps)", gates);
+            CHECK(out == 0, "every generated note in the key (%d out)", out);
+            for (v = 0; v < 8; v++) {   /* SWELL: rising through the first chord */
+                const uint8_t vv = x->p.vel[x->patSlot][0][v];
+                if (vv && prevV >= 0 && vv > prevV) risen++;
+                if (vv) prevV = vv;
+            }
+            CHECK(risen > 0, "SWELL: the velocities rise");
+        }
+        {   /* hundreds of lines: 50 presses, 50 different lines */
+            uint32_t seen[50];
+            int k, j, dup = 0;
+            for (k = 0; k < 50; k++) {
+                const TrackPat *tp = &bl_pat(x)->t[0];
+                uint32_t hsh = 2166136261u;
+                set(in, "srnd", "1");
+                for (j = 0; j < tp->len; j++) hsh = (hsh ^ (tp->s[j].note * 4u + (tp->s[j].f & 3))) * 16777619u;
+                for (j = 0; j < k; j++) dup += seen[j] == hsh;
+                seen[k] = hsh;
+            }
+            CHECK(dup == 0, "50 presses, 50 different lines (%d repeats)", dup);
         }
         peak = play(in, &ppq, 120, 4.0, 1, &rms, NULL);
         CHECK(peak == peak && peak < 1.f && rms > 0.005, "the random project plays (peak %f rms %f)", peak, rms);

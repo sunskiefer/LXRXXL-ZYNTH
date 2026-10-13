@@ -18,11 +18,13 @@ flowchart LR
   PM --> MIX(("mix"))
   SUB["SUB<br/>-1 oct (BAZZ: -1 / -2)<br/>SQR / SAW / TRI"] -- "SUB LVL" --> MIX
   NOISE["NOISE"] -- "NOISE LVL" --> MIX
-  MIX --> SW["SWARM<br/>BBD"] --> PRE["DRIVE (PRE)"] --> FLT["FILTER<br/>Polivoks / Diode, LP / BP"] --> POST["DRIVE (POST)"] --> TONE["TONE (BAZZ)"] --> VCA["VCA<br/>ATK, ENV, RELEASE"] --> OUT["LEVEL, PAN"]
+  MIX --> SW["SWARM<br/>BBD"] --> PRE["DRIVE (PRE)"] --> FLT["FILTER<br/>Polivoks / Diode, LP / BP"] --> POST["DRIVE (POST)"] --> TONE["TONE (BAZZ)"] --> VCA["VCA<br/>ADSR"] --> OUT["LEVEL, PAN"]
 ```
 
 Everything after the engine is LXRXXL BAZZLINE's (`src/voice.c`): the envelopes, accent and sweep, slide, the pitch
 envelope and the modulator. The modulator's WAVE destination moves the voice's main slider (`ENG_DEFS[].timbre`).
+The front's TIMBRE and MORPH move the two sliders in `ENG_MACROS[]` (`src/engines.c`). Each voice's home sound (the
+chain it starts with on a track, and VOICE RESET's) is in `src/sound.c` (`HOME[]`).
 
 ## 2. The sixteen voices
 

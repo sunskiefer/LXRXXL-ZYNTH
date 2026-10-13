@@ -10,10 +10,15 @@ float bl_tempo(Bl *x)
     return x->seq.hostTempo > 0 ? (float)x->seq.hostTempo : 120.f;
 }
 
-const TrackPat *bl_trackPat(Bl *x, int t)
+int bl_trackSrc(Bl *x, int t)
 {
     while (t > 0 && (x->p.links & (1u << t))) t--;   /* linked: the steps of the track before it */
-    return &bl_pat(x)->t[t];
+    return t;
+}
+
+const TrackPat *bl_trackPat(Bl *x, int t)
+{
+    return &bl_pat(x)->t[bl_trackSrc(x, t)];
 }
 
 void bl_initProject(Project *p)
@@ -31,6 +36,7 @@ void bl_initProject(Project *p)
     p->bpm = 0;
     p->gdOn = 0;
     for (t = 0; t < NUM_TRACKS; t++) p->send[t] = 1.f;
+    for (t = 0; t < NUM_TRACKS; t++) { p->rset[t].lenOpt = 3; p->rset[t].vel = RV_GROOVE; p->rset[t].style = RS_AUTO; }
     p->master = 0.8f;
 }
 

@@ -193,7 +193,7 @@ void voice_render(Voice *v, const Sound *s, float bpm, float *L, float *R, int n
     /* envelope times */
     const float aAtk = coef(0.0005f * powf(4000.f, s->v[SP_VCA_ATK]));
     /* VCA ENV fully down: the VCA follows the gate (held), then RELEASE; else the note decays on its own */
-    const int gated = s->v[SP_VCA_DEC] <= 0.02f;
+    const float sus = clampf(s->v[SP_SUSTAIN], 0, 1);   /* ADSR: the level held while the key is */
     const float aDec = expf(-1.f / (0.015f * powf(400.f, s->v[SP_VCA_DEC]) * SR / CR));
     const float aRel = expf(-1.f / (voice_relSeconds(s->v[SP_VCA_REL]) * 0.25f * SR / CR));
     const float fAtk = coef(0.0005f * powf(4000.f, s->v[SP_VCF_ATK]));
@@ -232,8 +232,8 @@ void voice_render(Voice *v, const Sound *s, float bpm, float *L, float *R, int n
             if (v->aenv >= 1.f) { v->aenv = 1.f; v->aStage = 2; }
             if (!v->gate) v->aStage = 2;   /* let go during the attack: the release from here */
         } else if (v->aStage == 2) {
-            if (gated) { if (!v->gate) v->aenv *= aRel; }
-            else v->aenv *= v->gate || aDec < aRel ? aDec : aRel;
+            if (v->gate) v->aenv = sus + (v->aenv - sus) * aDec;   /* DECAY to SUSTAIN, held there */
+            else v->aenv *= sus > 0.001f || aDec > aRel ? aRel : aDec;   /* RELEASE (no sustain: the faster) */
             if (v->aenv < 1e-5f) { v->aenv = 0; v->aStage = 0; }
         }
         if (v->fStage == 1) { v->fenv += fAtk * (1.25f - v->fenv); if (v->fenv >= 1.f) { v->fenv = 1.f; v->fStage = 2; } }

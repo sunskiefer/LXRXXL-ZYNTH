@@ -60,21 +60,25 @@ def page(tab, x, y):
 # around it (the delay's TIME has its scale printed on the panel instead)
 KNOBS = [
     (0, "drive", 98.5, 226.5, 130, "big", 1), (0, "cutoff", 896, 226, 130, "big", 1),
-    (0, "detune", 244, 256.5, 98, "big", 1), (0, "vca_env", 373, 256, 86, "big", 1),
+    # 0.2.0, the performance front: the voice's TIMBRE and MORPH where DETUNE and VCA ENV were, the amp envelope
+    # (ATTACK, DECAY, RELEASE) where FM, SUB and NOISE were, MOD RATE / MOD DEPTH and SUB on the right
+    (0, "timbre", 244, 256.5, 98, "big", 1), (0, "morph", 373, 256, 86, "big", 1),
     (0, "vcf_env", 625, 257, 88, "big", 1), (0, "resonance", 753, 257, 98, "big", 1),
-    (0, "fm_lvl", 62, 388, 98, "big", 1), (0, "sub_lvl", 191, 385, 98, "big", 1),
-    (0, "noise_lvl", 311, 389, 98, "big", 1), (0, "lfo_rate", 682, 385, 98, "big", 1),
-    (0, "lfo_lvl", 802, 383, 98, "big", 1), (0, "env_cv", 931, 385, 98, "big", 1),
+    (0, "vca_atk", 52, 388, 76, "big", 1), (0, "vca_env", 138, 388, 76, "big", 1),
+    (0, "sustain", 224, 388, 76, "big", 1), (0, "vca_rel", 310, 388, 76, "big", 1),
+    (0, "lfo_rate", 682, 385, 98, "big", 1),
+    (0, "lfo_lvl", 802, 383, 98, "big", 1), (0, "sub_lvl", 931, 385, 98, "big", 1),
     (0, "sel", 432, 424, 106, "encoder", 1), (0, "note", 563, 425, 106, "encoder", 1),
     (0, "dly_wet", 85, 100, 64, "big", 1), (0, "dly_time", 242, 120, 128, "big", 0),
     (0, "gd_rel", 712, 142, 72, "big", 1),
     # LXRXXL's randomizer amounts (their own knobs; the scale is printed around them: MOD_ART)
     (0, "srnd_amt", 370.3, 151.3, 50, "mod_yellow", 1), (0, "rnd_amt", 637.5, 151.3, 50, "mod_green", 1),
-    # MODULES: FM RATIO (FM LVL's ratio, any voice) and RELEASE (the amp envelope's), under SLIDE TIME
-    (1, "fm_ratio", 432.0, 218.75, 40, "big", 1), (1, "vca_rel", 497.7, 218.75, 40, "big", 1),
+    # MODULES: FM RATIO and FM LVL (the FM pair, any voice), under SLIDE TIME; NOISE beside KEY TRACK
+    (1, "fm_ratio", 432.0, 218.75, 40, "big", 1), (1, "fm_lvl", 497.7, 218.75, 40, "big", 1),
+    (1, "noise_lvl", 412, 374, 42, "big", 1),
     (1, "acc_amt", 419, 88, 52, "big", 1), (1, "acc_sweep", 419, 161, 52, "big", 1),
     (1, "slide_time", 490, 125.5, 50, "big", 1), (1, "keytrack", 341, 382, 50, "big", 1),
-    (1, "sw_rate", 494, 354, 48, "big", 1), (1, "detune", 577, 380, 50, "big", 1),
+    (1, "sw_rate", 494, 354, 48, "big", 1), (1, "detune", 577, 371, 44, "big", 1),
     (1, "sw_mix", 657, 356, 50, "big", 1),
     (2, "dly_time", 145.5, 519.5, 130, "big", 0), (2, "dly_in", 272, 467, 50, "big", 1),
     (2, "dly_fb", 344, 468, 50, "big", 1), (2, "dly_wet", 429, 452, 64, "big", 1),
@@ -88,9 +92,11 @@ KNOB_MAX = 126      # page px: a knob's 128-frame filmstrip stays under MPC's 16
 # option at the top)
 VSLIDERS = [("v1", 60, 48, 197), ("v2", 118, 48, 197), ("v3", 175, 48, 197),          # the voice's six sliders
             ("v4", 246, 48, 197), ("v5", 305, 48, 197), ("v6", 360, 48, 197),
-            ("vcf_atk", 566, 44, 193), ("vcf_dec", 624, 44, 193), ("vca_atk", 681, 44, 193),
-            ("vca_env", 738, 44, 193), ("env_cv", 797, 44, 193), ("pitch_dec", 854, 44, 193),
-            ("level", 912, 44, 193), ("pan", 970, 44, 193)]
+            # 0.2.0: the synth's envelopes: the amp ADSR, the filter's attack and decay, the pitch envelope (LEVEL and
+            # PAN are the FX MIXER's)
+            ("vca_atk", 566, 44, 193), ("vca_env", 624, 44, 193), ("sustain", 681, 44, 193),
+            ("vca_rel", 738, 44, 193), ("vcf_atk", 797, 44, 193), ("vcf_dec", 854, 44, 193),
+            ("env_cv", 912, 44, 193), ("pitch_dec", 970, 44, 193)]
 # the six voice sliders' printed labels are under the label windows (LABEL_WINDOWS): nothing to reprint
 RELABEL_WIPE = []
 RELABEL_WORDS = []
@@ -152,8 +158,29 @@ VOICE_SEL = (1, 98, 1, 168, 31)                          # MODULES: the VOICE se
 VOICE_LABEL = (24, 2, 76, 38)                            # page rect: its legend "VOICE"
 VOICE_KEYS = [("v_prev", 368, 21, 30), ("v_next", 422, 21, 30)]   # page: centre, size: VOICE < and VOICE >
 VOICE_KEY_TOUCH = (50, 42)                               # their touch area (page px), larger than the key
+# MODULES (0.2.0): the artwork's small legends reprinted bigger: (the printed word's ink box, artwork px), the word,
+# its new centre (artwork px; None: where it was), its cap height (page px). Their boxes are wiped (clean circuit).
+MODULES_REPRINT = [
+    ((90, 278, 144, 283), "POSITION", None, 12), ((35, 334, 65, 339), "CURVE", None, 12),
+    ((310, 278, 349, 283), "MODEL", None, 12), ((483, 278, 516, 283), "MODE", None, 12),
+    ((719, 267, 758, 273), "WAVE", None, 12), ((725, 341, 755, 346), "DEST", None, 12),
+    ((392, 119, 448, 125), "AMOUNT", None, 12), ((399, 191, 445, 197), "SWEEP", None, 12),
+    ((480, 387, 509, 392), "RATE", (494, 389), 12), ((645, 391, 666, 396), "MIX", (657, 391), 12),
+    ((556, 410, 601, 415), "SPREAD", (577, 402), 12),
+    # the section headings, bigger again
+    ((91, 258, 138, 265), "DRIVE", None, 14), ((311, 258, 364, 265), "FILTER", None, 14),
+    ((484, 257, 547, 264), "SWARM", None, 14), ((720, 252, 840, 260), "MODULATOR", (774, 256), 14),
+    ((414, 41, 492, 49), "ACCENT", None, 14), ((878, 13, 991, 22), "AMP ENV", (652, 18), 14),
+    ((825, 18, 825, 18), "FILTER", None, 14), ((941, 18, 941, 18), "PITCH", None, 14),
+]
+# two-line legends reprinted the same way: (ink box), (line 1, line 2), centre, cap
+MODULES_REPRINT2 = [((270, 372, 307, 387), ("KEY", "TRACK"), (281, 380), 12),
+                    ((471, 155, 508, 169), ("SLIDE", "TIME"), (490, 162), 12)]
+# the selector bars' and FREE / TEMPO's words: drawn in label-window style (BAR_TEXT px tall at most)
+BAR_TEXT = 14
 # MODULES: printed legends (page rect, text, px) of the controls ZYNTH adds
-MODULES_LABELS = [((518, 310, 70, 13), "FM RATIO", 10), ((602, 310, 70, 13), "RELEASE", 10)]
+MODULES_LABELS = [((513, 309, 80, 14), "FM RATIO", 11), ((597, 309, 80, 14), "FM LVL", 11),
+                  ((487, 511, 80, 14), "NOISE", 12)]
 # PANEL: LXRXXL's randomizers beside the panic key (page pixels): each key's picture, centre and size; the scale
 # printed round each amount knob; the legend ("?" for STEP RANDOM, the warning sign for SOUND RANDOM)
 MOD_KEYS = [("srnd", "mod_key_yellow.png", 549, 176, 40), ("rnd", "mod_key_green.png", 744, 176, 40)]
@@ -161,7 +188,7 @@ MOD_ART = [("mod_label_question.png", 549, 140, 14), ("mod_label_warning.png", 7
 # white segmented ring of every other knob, not LXRXXL's coloured scales)
 # MODULES: the other sliders' legends in label windows like the voice's (fixed text, page pixels)
 FIXED_WINDOWS = [((round(x * 1.28 - 33), 270, 66, 40), t) for (_, x, _, _), t in
-                 zip(VSLIDERS[6:], ["VCF|ATK", "VCF|DEC", "VCA|ATK", "VCA|DEC", "PITCH|AMT", "PITCH|DEC", "LEVEL", "PAN"])]
+                 zip(VSLIDERS[6:], ["ATTACK", "DECAY", "SUSTAIN", "RELEASE", "VCF|ATK", "VCF|DEC", "PITCH|AMT", "PITCH|DEC"])]
 CH_SEL = (2, 661, 585, 40, 34)                             # FX MIXER: the duck's MIDI channel
 
 # ---------------------------------------------------------------- presets (FX MIXER, page pixels)

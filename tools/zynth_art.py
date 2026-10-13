@@ -25,6 +25,34 @@ TEX = os.path.join(ROOT, "art", "texture", "veins.png")
 FONT14 = os.path.join(ROOT, "art", "fonts", "DSEG14Classic-Italic.ttf")
 MICH = os.path.join(ROOT, "art", "fonts", "Michroma-Regular.ttf")
 
+# 0.2.0, the performance front: printed legends replaced (BAZZLINE's ink box, the new word); the new words are set in
+# Michroma (the printed legends' face) at the measured cap height, width and letter spacing (legend())
+RELABEL = [
+    ((211, 311, 278, 319), "TIMBRE"),        # was DETUNE
+    ((339, 304, 412, 312), "MORPH"),         # was VCA ENV
+    ((37, 440, 88, 448), None),              # FM LVL, SUB LVL, NOISE LVL: the ADSR's four legends instead (ADSR)
+    ((161, 437, 222, 445), None),
+    ((276, 441, 351, 449), None),
+    ((651, 439, 720, 447), "MOD RATE"),      # was LFO RATE
+    ((774, 438, 831, 446), "MOD DEPTH"),     # was LFO LVL
+    ((890, 441, 975, 449), "SUB LVL"),       # was ENV/CV LVL
+    ((666, 184, 759, 193), "DUCK RELEASE"),  # was RELEASE (the gate/duck's)
+]
+SUB_LEGEND = (443, 218, "SUB")
+ADSR = [(52, "ATTACK"), (138, "DECAY"), (224, "SUSTAIN"), (310, "RELEASE")]   # under the four knobs (x centre)
+ADSR_TOP, ADSR_CAP, ADSR_W = 438, 8, 76
+# the small legends reprinted bigger: (ink box), word, cap (artwork px), the widest it may be (artwork px)
+STEP_WORDS = ["ACC", "SLIDE", "MOD", "PITCH ENV", "LAST STEP", "PLAY MODE", "TRANSP", "SCALE", "ARPEGG", "LFO",
+              "RND PATT", "CLEAR", "COPY", "PASTE", "BANK", "PATTERN"]
+STEP_X = [39, 101, 164, 225, 287, 350, 411, 472, 534, 595, 658, 719, 781, 843, 905, 968]
+SMALL = [((x - 30, 581, x + 30, 592), w, 9, 48) for x, w in zip(STEP_X, STEP_WORDS)] + [
+    ((462, 235, 488, 242), "SQR", 8, 40), ((462, 250, 492, 256), "SAW", 8, 40), ((463, 264, 481, 271), "TRI", 8, 40),
+    ((543, 239, 559, 246), "BP", 8, 30), ((543, 262, 557, 268), "LP", 8, 30),
+    ((819, 497, 850, 506), "-1 OCT", 8, 56), ((880, 497, 915, 506), "+1 OCT", 8, 56),
+    ((306, 47, 353, 55), "TRACK", 9, 60),
+    ((379, 477, 481, 486), "SELECT/GATE", 10, 120), ((521, 478, 607, 486), "BACK/NOTE", 10, 110),
+]              # over the SQR/SAW/TRI switch: the sub oscillator's wave (BAZZ: its own)
+
 ICE = np.array([125, 205, 245], np.float32)      # the accent: the ice orb's glow
 GHOST = (10, 28, 38)                              # unlit segments
 ORANGE_LUM = 0.30 * 251 + 0.59 * 144 + 0.11 * 19
@@ -108,6 +136,26 @@ def comp(base, src, mask):
     return out
 
 
+def legend(word, cap, ratio=0.95, track=2.5, sw=1, S=8, colour=(236, 236, 236)):
+    """a printed legend: Michroma, cap px high, squeezed by ratio (the artwork is drawn 1/1.28 wide), letter-spaced"""
+    f = ImageFont.truetype(MICH, cap * S)
+    xs, x = [], 0.0
+    for ch in word:
+        xs.append(x)
+        x += f.getlength(ch) + track * S / ratio
+    _, t, _, b = f.getbbox("H", stroke_width=sw)
+    big = Image.new("L", (int(x + 20), int(b - t + 2 * S)), 0)
+    d = ImageDraw.Draw(big)
+    for ch, px in zip(word, xs):
+        d.text((4 + px, S - t), ch, font=f, fill=255, stroke_width=sw, stroke_fill=255)
+    bb = big.getbbox()
+    big = big.crop((bb[0], bb[1], bb[2], bb[3]))
+    m = big.resize((max(1, round(big.width / S * ratio)), max(1, round(big.height / S))), Image.LANCZOS)
+    out = Image.new("RGBA", m.size, colour + (0,))
+    out.putalpha(m)
+    return out
+
+
 def seg_text(text, cells, cell_w, h):
     """14-segment text in ice with its unlit segments and a glow (as the BAZZLINE logo was)"""
     f = ImageFont.truetype(FONT14, h)
@@ -143,7 +191,30 @@ def main():
     mask[584:625, 100:342] *= keep
     mask[584:625, 100:342] = ndimage.binary_erosion(mask[584:625, 100:342] > 0.5, iterations=1) * mask[584:625, 100:342]
     mask[458:492, 254:362] = 0                          # "8-TRACK BASS VOICE": reprinted below
+    for (x0, y0, x1, y1), _ in RELABEL:                 # the replaced legends: the texture shows through
+        mask[y0 - 2:y1 + 2, x0 - 3:x1 + 3] = 0
+    for (x0, y0, x1, y1), *_ in SMALL:                  # the small ones, reprinted bigger
+        mask[y0 - 1:y1 + 1, x0 - 1:x1 + 1] = 0
     new = Image.fromarray(comp(front_tex, fb, mask).astype(np.uint8), "RGBA")
+    for cx, word in ADSR:
+        lg = legend(word, ADSR_CAP, track=2.0)
+        if lg.width > ADSR_W:
+            lg = lg.resize((ADSR_W, lg.height), Image.LANCZOS)
+        new.alpha_composite(lg, (round(cx - lg.width / 2), ADSR_TOP))
+    for (x0, y0, x1, y1), word in RELABEL:
+        if not word:
+            continue
+        lg = legend(word, y1 - y0 + 1)
+        new.alpha_composite(lg, (round((x0 + x1) / 2 - lg.width / 2), y0))
+    for (x0, y0, x1, y1), word, cap, wmax in SMALL:
+        lg = legend(word, cap, track=1.6)
+        if lg.width > wmax:
+            lg = lg.resize((wmax, lg.height), Image.LANCZOS)
+        cy = (y0 + y1) / 2
+        new.alpha_composite(lg, (round((x0 + x1) / 2 - lg.width / 2), round(cy - lg.height / 2)))
+    sx, sy, word = SUB_LEGEND
+    lg = legend(word, 6, track=1.5, sw=0, colour=(200, 200, 200))
+    new.alpha_composite(lg, (round(sx - lg.width / 2), sy))
     zy = seg_text("ZYNTH", 5, 40, 30)
     new.alpha_composite(zy, (338 - zy.width + 4, 587))
     tag = Image.new("RGBA", (150, 34), (0, 0, 0, 0))

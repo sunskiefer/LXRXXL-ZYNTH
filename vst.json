@@ -2,7 +2,7 @@
   "name": "LXRXXL ZYNTH",
   "vendor": "ANDREALPHEUS",
   "uid": "AnZy",
-  "version": 1000,
+  "version": 2000,
   "so": "lxrxxl_zynth.so",
   "params": "params.json",
   "layout": "layout.conf",

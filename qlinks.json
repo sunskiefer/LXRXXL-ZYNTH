@@ -42,27 +42,28 @@
      "key": "drive"
     },
     {
-     "n": 10
+     "n": 10,
+     "key": "timbre"
     },
     {
      "n": 11,
-     "key": "detune"
+     "key": "morph"
     },
     {
      "n": 12,
-     "key": "vca_env"
+     "key": "vcf_env"
     },
     {
      "n": 13,
-     "key": "fm_lvl"
+     "key": "resonance"
     },
     {
      "n": 14,
-     "key": "sub_lvl"
+     "key": "cutoff"
     },
     {
      "n": 15,
-     "key": "noise_lvl"
+     "key": "fmode"
     },
     {
      "n": 16,
@@ -70,31 +71,31 @@
     },
     {
      "n": 17,
-     "key": "vcf_env"
+     "key": "vca_atk"
     },
     {
      "n": 18,
-     "key": "resonance"
+     "key": "vca_env"
     },
     {
      "n": 19,
-     "key": "cutoff"
+     "key": "sustain"
     },
     {
      "n": 20,
-     "key": "lfo_rate"
+     "key": "vca_rel"
     },
     {
      "n": 21,
-     "key": "lfo_lvl"
+     "key": "lfo_rate"
     },
     {
      "n": 22,
-     "key": "env_cv"
+     "key": "lfo_lvl"
     },
     {
      "n": 23,
-     "key": "fmode"
+     "key": "sub_lvl"
     }
    ]
   },
@@ -134,35 +135,35 @@
     },
     {
      "n": 9,
-     "key": "vcf_atk"
-    },
-    {
-     "n": 10,
-     "key": "vcf_dec"
-    },
-    {
-     "n": 11,
      "key": "vca_atk"
     },
     {
-     "n": 12,
+     "n": 10,
      "key": "vca_env"
     },
     {
+     "n": 11,
+     "key": "sustain"
+    },
+    {
+     "n": 12,
+     "key": "vca_rel"
+    },
+    {
      "n": 13,
-     "key": "env_cv"
+     "key": "vcf_atk"
     },
     {
      "n": 14,
-     "key": "pitch_dec"
+     "key": "vcf_dec"
     },
     {
      "n": 15,
-     "key": "level"
+     "key": "env_cv"
     },
     {
      "n": 16,
-     "key": "pan"
+     "key": "pitch_dec"
     },
     {
      "n": 17,
@@ -226,7 +227,11 @@
     },
     {
      "n": 32,
-     "key": "vca_rel"
+     "key": "fm_lvl"
+    },
+    {
+     "n": 33,
+     "key": "noise_lvl"
     }
    ]
   },

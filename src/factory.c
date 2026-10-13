@@ -16,11 +16,11 @@ static const Set SOUNDS[NUM_TRACKS][28] = {
     /* 1 ACID: LXRXXL BAZZLINE's acid line, on its own voice */
     {VOICE(ENG_BAZZ), {SP_V1, .5f / 3}, {SP_V2, 0.f}, {SP_V3, 2.5f / 5}, {SP_V4, .25f}, {SP_V5, .1f}, {SP_V6, .8f},
      {SP_WAVE, 1}, {SP_FMODEL, 1}, {SP_FMODE, 1}, {SP_CUTOFF, .28f}, {SP_RESO, .8f}, {SP_VCF_ENV, .55f},
-     {SP_VCF_DEC, .36f}, {SP_VCA_DEC, .55f}, {SP_ACC_AMT, .7f}, {SP_ACC_SWEEP, .55f}, {SP_SLIDE, .33f},
+     {SP_VCF_DEC, .36f}, {SP_VCA_DEC, .55f}, {SP_SUSTAIN, 0}, {SP_ACC_AMT, .7f}, {SP_ACC_SWEEP, .55f}, {SP_SLIDE, .33f},
      {SP_DRIVE, .3f}, {SP_KEYTRACK, .3f}, {SP_LEVEL, .72f}, END},
     /* 2 E.PIANO: FM6, algorithm 5 (three pairs), the modulators fading */
     {VOICE(ENG_FM6), {SP_V1, 4.5f / 32}, {SP_V2, 3.5f / 16}, {SP_V3, .32f}, {SP_V4, .1f}, {SP_V5, .25f}, {SP_V6, .2f},
-     {SP_CUTOFF, .85f}, {SP_RESO, .1f}, {SP_VCF_ENV, 0.f}, {SP_VCA_DEC, .62f}, {SP_VCA_REL, .35f}, {SP_DRIVE, .05f},
+     {SP_CUTOFF, .85f}, {SP_RESO, .1f}, {SP_VCF_ENV, 0.f}, {SP_VCA_DEC, .62f}, {SP_SUSTAIN, 0}, {SP_VCA_REL, .35f}, {SP_DRIVE, .05f},
      {SP_LEVEL, .7f}, {SP_PAN, .4f}, END},
     /* 3 PAD: WAVE through the BBD swarm, the modulator scanning the table */
     {VOICE(ENG_WAVE), {SP_V1, .2f}, {SP_V2, .4f}, {SP_V3, .6f}, {SP_V4, .5f / 4}, {SP_V5, 0.f}, {SP_V6, .1f},
@@ -29,7 +29,7 @@ static const Set SOUNDS[NUM_TRACKS][28] = {
      {SP_LFO_LVL, .5f}, {SP_DRIVE, .05f}, {SP_LEVEL, .62f}, {SP_PAN, .6f}, END},
     /* 4 PLUCK: PHYS, a string */
     {VOICE(ENG_PHYS), {SP_V1, .25f}, {SP_V2, .25f}, {SP_V3, .6f}, {SP_V4, .6f}, {SP_V5, 0.f}, {SP_V6, .7f},
-     {SP_VCA_DEC, .8f}, {SP_VCA_REL, .4f}, {SP_CUTOFF, .95f}, {SP_RESO, 0.f}, {SP_VCF_ENV, 0.f}, {SP_DRIVE, .05f},
+     {SP_VCA_DEC, .8f}, {SP_SUSTAIN, 0}, {SP_VCA_REL, .4f}, {SP_CUTOFF, .95f}, {SP_RESO, 0.f}, {SP_VCF_ENV, 0.f}, {SP_DRIVE, .05f},
      {SP_LEVEL, .8f}, {SP_PAN, .45f}, END},
     /* 5 ORGAN: WHEEL, the slow rotor */
     {VOICE(ENG_WHEEL), {SP_V1, .8f}, {SP_V2, .8f}, {SP_V3, .35f}, {SP_V4, 2.5f / 5}, {SP_V5, .3f}, {SP_V6, .35f},
@@ -41,11 +41,11 @@ static const Set SOUNDS[NUM_TRACKS][28] = {
      {SP_MOD_DEST, 3}, {SP_LFO_RATE, .15f}, {SP_LFO_LVL, .4f}, {SP_LEVEL, .6f}, {SP_PAN, .55f}, END},
     /* 7 ARP: CHIP, 25 % pulse, a major arpeggio */
     {VOICE(ENG_CHIP), {SP_V1, 1.5f / 7}, {SP_V2, .5f}, {SP_V3, .8f}, {SP_V4, 2.5f / 8}, {SP_V5, .55f}, {SP_V6, .5f},
-     {SP_VCA_DEC, .45f}, {SP_VCA_REL, .2f}, {SP_CUTOFF, .9f}, {SP_RESO, 0.f}, {SP_VCF_ENV, 0.f}, {SP_LEVEL, .55f},
+     {SP_VCA_DEC, .45f}, {SP_SUSTAIN, 0}, {SP_VCA_REL, .2f}, {SP_CUTOFF, .9f}, {SP_RESO, 0.f}, {SP_VCF_ENV, 0.f}, {SP_LEVEL, .55f},
      {SP_PAN, .35f}, END},
     /* 8 BELL: LXR METAL, bell character */
     {VOICE(ENG_LXR_METAL), {SP_V1, .62f}, {SP_V2, .45f}, {SP_V3, .15f}, {SP_V4, .05f}, {SP_V5, .45f}, {SP_V6, .2f},
-     {SP_VCA_DEC, .5f}, {SP_VCA_REL, .4f}, {SP_CUTOFF, 1.f}, {SP_RESO, 0.f}, {SP_VCF_ENV, 0.f}, {SP_LEVEL, .5f},
+     {SP_VCA_DEC, .5f}, {SP_SUSTAIN, 0}, {SP_VCA_REL, .4f}, {SP_CUTOFF, 1.f}, {SP_RESO, 0.f}, {SP_VCF_ENV, 0.f}, {SP_LEVEL, .5f},
      {SP_PAN, .65f}, END},
 };
 

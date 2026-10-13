@@ -79,6 +79,8 @@ typedef struct {
     uint8_t steps[ENG_SLIDERS];  /* > 0: the slider picks one of this many options */
 } EngDef;
 extern const EngDef ENG_DEFS[NUM_ENGINES];
+/* the front panel's TIMBRE and MORPH: the two sliders (V1..V6, 0-based) that change each voice the most */
+extern const int8_t ENG_MACROS[NUM_ENGINES][2];
 
 void eng_tables_init(void);                     /* the shared tables (sine, windows, grain waves): once */
 void eng_reset(Eng *e, int type);               /* a new voice type, or the voice from rest */

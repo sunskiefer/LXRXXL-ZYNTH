@@ -199,6 +199,14 @@ void ui_readout(Bl *x, char *buf, int n)
                 snprintf(buf, (size_t)n, "T%d   STEP %d   %s", x->ui.track + 1, x->ui.sel + 1, nn);
             } else if (m->id == UI_RND_AMT) snprintf(buf, (size_t)n, "SOUND RANDOM AMOUNT   %d %%", x->rnd2.amt * 10);
             else if (m->id == UI_SRND_AMT) snprintf(buf, (size_t)n, "STEP RANDOM AMOUNT   %d %%", x->rnd2.seqAmt * 10);
+            else if (m->id == UI_TIMBRE || m->id == UI_MORPH) {
+                const Sound *s = &x->p.snd[x->ui.track];
+                const int ty = voice_of(s), k = ENG_MACROS[ty][m->id == UI_MORPH];
+                char v2[48];
+                eng_value_text(ty, k, s->v[SP_V1 + k], v2, sizeof v2, 1);
+                snprintf(buf, (size_t)n, "T%d   %s %s: %s   %s", x->ui.track + 1, ENG_DEFS[ty].name,
+                         m->id == UI_MORPH ? "MORPH" : "TIMBRE", ENG_DEFS[ty].slider[k], v2);
+            }
             else snprintf(buf, (size_t)n, "TRACK %d", x->ui.track + 1);
             return;
         }
@@ -247,6 +255,7 @@ static void mode_text(Bl *x, char *b)
     case MD_LFO: short_label(SOUND_DEFS[SP_MOD_WAVE].opts[(int)x->p.snd[x->ui.track].v[SP_MOD_WAVE]], b); break;
     case MD_BANK: snprintf(b, 8, "BK%c", 'A' + x->ui.bank); break;
     case MD_PATTERN: snprintf(b, 8, "%c%02d", 'A' + x->ui.bank, (x->patSlot % 16) + 1); break;
+    case MD_RNDSET: strcpy(b, "SET"); break;
     default: b[0] = 0; break;
     }
 }
@@ -273,6 +282,43 @@ static int track_len(Bl *x) { const TrackPat *tp = bl_edit(x); return tp->len ? 
 
 static void flash(Bl *x, int b) { x->ui.flash[b] = x->clock + MS(150); }
 
+/* ---------------------------------------------------------------- STEP RANDOM's setup (SHIFT + STEP RANDOM)
+ * keys 1-8: the length it writes (4 8 12 16 24 32 48 64), 9-12: the velocities (FLAT GROOVE HUMAN SWELL),
+ * 13: the style (AUTO CHORD ARP LEAD BASS HITS, round), 14: the key's root up a semitone, 15: the next mode,
+ * 16: a new progression and chord colour. BACK/NOTE: the root, SELECT/GATE: the mode. STEP RANDOM: every track. */
+static const char *const VEL_NAMES[RV_COUNT] = {"FLAT", "GROOVE", "HUMAN", "SWELL"};
+
+static void rndset_say(Bl *x, const char *what)
+{
+    const RndSet *r = &x->p.rset[x->ui.track];
+    char h[64];
+    rnd_harmonyText(x, h, sizeof h);
+    if (what) snprintf(x->pr.msg, sizeof x->pr.msg, "T%d   %s", x->ui.track + 1, what);
+    else if (r->style == RS_AUTO)
+        snprintf(x->pr.msg, sizeof x->pr.msg, "T%d   %d STEPS   %s   AUTO %s   %s", x->ui.track + 1, RND_LENGTHS[r->lenOpt & 7],
+                 VEL_NAMES[r->vel % RV_COUNT], rnd_styleName(rnd_styleOf(x, x->ui.track)), h);
+    else
+        snprintf(x->pr.msg, sizeof x->pr.msg, "T%d   %d STEPS   %s   %s   %s", x->ui.track + 1, RND_LENGTHS[r->lenOpt & 7],
+                 VEL_NAMES[r->vel % RV_COUNT], rnd_styleName(r->style), h);
+    x->touched = TOUCH_PRESET;
+}
+
+static void rndset_key(Bl *x, int k)
+{
+    RndSet *r = &x->p.rset[x->ui.track];
+    const Harmony *h = rnd_harmony(x);
+    char b[16];
+    if (k < 8) { r->lenOpt = (uint8_t)k; snprintf(b, sizeof b, "%d", RND_LENGTHS[k]); }
+    else if (k < 12) { r->vel = (uint8_t)(k - 8); snprintf(b, sizeof b, "%.3s", VEL_NAMES[r->vel]); }
+    else if (k == 12) { r->style = (uint8_t)((r->style + 1) % RS_COUNT); snprintf(b, sizeof b, "%.3s", rnd_styleName(r->style)); }
+    else if (k == 13) { rnd_harmonyNudge(x, 0, h->root + 1); snprintf(b, sizeof b, "KEY"); }
+    else if (k == 14) { rnd_harmonyNudge(x, 1, h->mode + 1); snprintf(b, sizeof b, "%s", rnd_modeName(rnd_harmony(x)->mode, 0)); }
+    else { rnd_harmonyNudge(x, 2, 0); snprintf(b, sizeof b, "NEW"); }
+    ui_message(x, b, 0, 1000);
+    flash(x, B_S1 + k);
+    rndset_say(x, NULL);
+}
+
 static void step_key(Bl *x, int k)
 {
     TrackPat *tp = bl_edit(x);
@@ -283,6 +329,7 @@ static void step_key(Bl *x, int k)
     case MD_NORMAL:
         if (!st || idx >= track_len(x)) { ui_message(x, "---", 0, 600); return; }
         st->f ^= ST_GATE;
+        bl_vel(x, x->ui.track)[idx] = 0;   /* a key's step: the default velocity */
         if (!st->note) st->note = 36;
         x->ui.sel = (uint8_t)idx;
         if (st->f & ST_GATE) { note_name(st->note, b); ui_message(x, b, 0, 1200); }
@@ -321,6 +368,7 @@ static void step_key(Bl *x, int k)
         snprintf(b, sizeof b, "%c%02d", 'A' + x->ui.bank, k + 1);
         ui_message(x, b, 0, 1000);
         break;
+    case MD_RNDSET: rndset_key(x, k); break;
     default: break;
     }
     x->displayRev++;
@@ -345,11 +393,17 @@ static void function_key(Bl *x, int k)
     case 10: seq_randomTrack(x, x->ui.track); ui_message(x, "RND", 0, 800); break;
     case 11:
         for (i = 0; i < NUM_STEPS; i++) tp->s[i].f = 0;
+        memset(bl_vel(x, x->ui.track), 0, NUM_STEPS);
         ui_message(x, "CLR", 0, 800);
         break;
-    case 12: x->clip.t[0] = *tp; x->clipValid = 1; ui_message(x, "CPY", 0, 800); break;
+    case 12:
+        x->clip.t[0] = *tp;
+        memcpy(x->clipVel, bl_vel(x, x->ui.track), NUM_STEPS);
+        x->clipValid = 1;
+        ui_message(x, "CPY", 0, 800);
+        break;
     case 13:
-        if (x->clipValid) { *tp = x->clip.t[0]; ui_message(x, "PST", 0, 800); }
+        if (x->clipValid) { *tp = x->clip.t[0]; memcpy(bl_vel(x, x->ui.track), x->clipVel, NUM_STEPS); ui_message(x, "PST", 0, 800); }
         else ui_message(x, "---", 0, 800);
         break;
     case 14: x->ui.mode = MD_BANK; break;
@@ -508,9 +562,7 @@ void ui_press(Bl *x, int b)
             snprintf(x->pr.msg, sizeof x->pr.msg, x->p.mutes ? "MUTE ALL" : "ALL TRACKS ON");
         } else {             /* VOICE RESET: the selected track's sound back to the default (its voice kept) */
             Sound *snd = &x->p.snd[x->ui.track];
-            const int ty = voice_of(snd);
-            init_sound(snd);
-            sound_setVoice(snd, ty);
+            sound_resetVoice(snd, voice_of(snd));   /* the voice's home sound (LEVEL and PAN kept) */
             ui_message(x, "INI", 0, 1000);
             snprintf(x->pr.msg, sizeof x->pr.msg, "T%d   VOICE RESET", x->ui.track + 1);
         }
@@ -527,15 +579,38 @@ void ui_press(Bl *x, int b)
         flash(x, b);
         break;
     }
-    case B_RND: case B_SRND: {   /* the randomizers: every track, or with SHIFT the selected one */
-        const int one = x->ui.shift;
+    case B_RND: case B_SRND: {
+        /* SOUND RANDOM: the selected track; SHIFT: every track.
+         * STEP RANDOM: the selected track; SHIFT: its setup (where STEP RANDOM does every track) */
         const int pct = (b == B_RND ? x->rnd2.amt : x->rnd2.seqAmt) * 10;
-        if (b == B_RND) { rnd_sounds(x, pct, one ? x->ui.track : -1); x->rnd2.flash = x->clock + 13230; }
-        else { rnd_steps(x, pct, one ? x->ui.track : -1); x->rnd2.seqFlash = x->clock + 13230; }
+        int one = 1;
+        if (b == B_SRND && x->ui.shift && x->ui.mode != MD_RNDSET) {
+            x->ui.shift = 0;
+            x->ui.mode = MD_RNDSET;
+            ui_message(x, "SET", 0, 1000);
+            rndset_say(x, NULL);
+            break;
+        }
+        if (b == B_RND) {
+            const char *ch;
+            one = !x->ui.shift;
+            ch = rnd_sounds(x, pct, one ? x->ui.track : -1);
+            x->rnd2.flash = x->clock + 13230;
+            if (one) snprintf(x->pr.msg, sizeof x->pr.msg, "T%d   SOUND RANDOM   %d %%   %s", x->ui.track + 1, pct, ch);
+            else snprintf(x->pr.msg, sizeof x->pr.msg, "ALL TRACKS   SOUND RANDOM   %d %%", pct);
+        } else {
+            char h[64];
+            one = x->ui.mode != MD_RNDSET;
+            rnd_steps(x, pct, one ? x->ui.track : -1);
+            x->rnd2.seqFlash = x->clock + 13230;
+            rnd_harmonyText(x, h, sizeof h);
+            if (one) snprintf(x->pr.msg, sizeof x->pr.msg, "T%d   STEP RANDOM   %s   %s", x->ui.track + 1,
+                              rnd_styleName(rnd_styleOf(x, x->ui.track)), h);
+            else snprintf(x->pr.msg, sizeof x->pr.msg, "ALL TRACKS   STEP RANDOM   %s", h);
+            x->ui.mode = MD_NORMAL;
+        }
         x->ui.shift = 0;
         ui_message(x, b == B_RND ? "RND" : "STP", 0, 800);
-        if (one) snprintf(x->pr.msg, sizeof x->pr.msg, "T%d   %s RANDOM   %d %%", x->ui.track + 1, b == B_RND ? "SOUND" : "STEP", pct);
-        else snprintf(x->pr.msg, sizeof x->pr.msg, "ALL TRACKS   %s RANDOM   %d %%", b == B_RND ? "SOUND" : "STEP", pct);
         x->touched = TOUCH_PRESET;
         break;
     }
@@ -588,6 +663,13 @@ int ui_led(Bl *x, int b)
         case MD_PATTERN:
             if (x->nextPat != 0xff && x->nextPat == x->ui.bank * 16 + k) return blink;
             return x->patSlot == x->ui.bank * 16 + k;
+        case MD_RNDSET: {
+            const RndSet *r = &x->p.rset[x->ui.track];
+            if (k < 8) return k == (r->lenOpt & 7);
+            if (k < 12) return k - 8 == r->vel;
+            if (k == 12) return r->style != RS_AUTO;
+            return 0;
+        }
         default: return 0;
         }
     }
@@ -609,7 +691,7 @@ int ui_led(Bl *x, int b)
     case B_PR_SOUND: case B_PR_PERF: case B_PR_SAVE: case B_PR_LOAD: return preset_led(x, b);
     case B_V_RESET: return x->p.mutes == 0xff;   /* lit while everything is muted */
     case B_RND: return (int32_t)(x->rnd2.flash - x->clock) > 0;
-    case B_SRND: return (int32_t)(x->rnd2.seqFlash - x->clock) > 0;
+    case B_SRND: return (int32_t)(x->rnd2.seqFlash - x->clock) > 0 || (x->ui.mode == MD_RNDSET && blink);
     default:
         if (b >= B_MUTE1 && b <= B_MUTE8) return (x->p.mutes >> (b - B_MUTE1)) & 1;
         if (b >= B_SOLO1 && b <= B_SOLO8) return (x->p.solos >> (b - B_SOLO1)) & 1;
@@ -650,7 +732,7 @@ void ui_knob(Bl *x, int which, float norm)
     if (x->ui.encMode[which] != x->ui.mode) { x->ui.encPos[which] = -1.f; x->ui.encMode[which] = x->ui.mode; }
     enc_pos = &x->ui.encPos[which];
     /* in a function, BACK/NOTE sets its value; SELECT/GATE stays the step knob (in LFO it picks the wave) */
-    switch (which == 1 || x->ui.mode == MD_LFO ? x->ui.mode : MD_NORMAL) {
+    switch (which == 1 || x->ui.mode == MD_LFO || x->ui.mode == MD_RNDSET ? x->ui.mode : MD_NORMAL) {
     case MD_PLAYMODE: tp->playMode = (uint8_t)enc_index(norm, tp->playMode, PM_COUNT); mode_text(x, b); ui_message(x, b, 0, 1200); break;
     case MD_TRANSP: tp->transp = (int8_t)(enc_index(norm, tp->transp + 24, 49) - 24); mode_text(x, b); ui_message(x, b, 0, 1200); break;
     case MD_SCALE: tp->scale = (uint8_t)enc_index(norm, tp->scale, NUM_SCALES); mode_text(x, b); ui_message(x, b, 0, 1200); break;
@@ -661,6 +743,14 @@ void ui_knob(Bl *x, int which, float norm)
         else { s->v[SP_MOD_DEST] = (float)enc_index(norm, (int)s->v[SP_MOD_DEST], 4); ui_soundTouched(x, SP_MOD_DEST); }
         break;
     case MD_BANK: x->ui.bank = (uint8_t)enc_index(norm, x->ui.bank, NUM_BANKS); mode_text(x, b); ui_message(x, b, 0, 1200); break;
+    case MD_RNDSET: {   /* BACK/NOTE: the key's root; SELECT/GATE: the mode */
+        const Harmony *h = rnd_harmony(x);
+        if (which == 1) { rnd_harmonyNudge(x, 0, enc_index(norm, h->root, 12)); snprintf(b, sizeof b, "KEY"); }
+        else { rnd_harmonyNudge(x, 1, enc_index(norm, h->mode, NUM_HARM_MODES)); snprintf(b, sizeof b, "%s", rnd_modeName(rnd_harmony(x)->mode, 0)); }
+        ui_message(x, b, 0, 1200);
+        rndset_say(x, NULL);
+        break;
+    }
     case MD_PATTERN: {
         const int cur = x->nextPat != 0xff && x->nextPat / 16 == x->ui.bank ? x->nextPat % 16 : x->patSlot % 16;
         seq_queuePattern(x, (uint8_t)(x->ui.bank * 16 + enc_index(norm, cur, 16)));
@@ -693,7 +783,7 @@ float ui_knobGet(Bl *x, int which)
     if (x->ui.encMode[which] == x->ui.mode && x->ui.encPos[which] >= 0.f) return x->ui.encPos[which];   /* where it stands */
     const TrackPat *tp = bl_edit(x);
     const Sound *s = &x->p.snd[x->ui.track];
-    switch (which == 1 || x->ui.mode == MD_LFO ? x->ui.mode : MD_NORMAL) {
+    switch (which == 1 || x->ui.mode == MD_LFO || x->ui.mode == MD_RNDSET ? x->ui.mode : MD_NORMAL) {
     case MD_PLAYMODE: return tp->playMode / (float)(PM_COUNT - 1);
     case MD_TRANSP: return (tp->transp + 24) / 48.f;
     case MD_SCALE: return tp->scale / (float)(NUM_SCALES - 1);
@@ -701,6 +791,7 @@ float ui_knobGet(Bl *x, int which)
     case MD_LAST: return (tp->len - 1) / 63.f;
     case MD_LFO: return which == 0 ? s->v[SP_MOD_WAVE] / 4.f : s->v[SP_MOD_DEST] / 3.f;
     case MD_BANK: return x->ui.bank / (float)(NUM_BANKS - 1);
+    case MD_RNDSET: return which == 1 ? rnd_harmony(x)->root / 11.f : rnd_harmony(x)->mode / (float)(NUM_HARM_MODES - 1);
     case MD_PATTERN: return (x->nextPat != 0xff && x->nextPat / 16 == x->ui.bank ? x->nextPat % 16 : x->patSlot % 16) / 15.f;
     default:
         if (which == 0) { const int len = track_len(x); return len > 1 ? x->ui.sel / (float)(len - 1) : 0.f; }
