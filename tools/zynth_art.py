@@ -36,7 +36,8 @@ RELABEL = [
     ((651, 439, 720, 447), "MOD RATE"),      # was LFO RATE
     ((774, 438, 831, 446), "MOD DEPTH"),     # was LFO LVL
     ((890, 441, 975, 449), "SUB LVL"),       # was ENV/CV LVL
-    ((666, 184, 759, 193), "DUCK RELEASE"),  # was RELEASE (the gate/duck's)
+    ((666, 184, 759, 193), "CHAOS"),         # was RELEASE (the gate/duck's): CHAOS's depth
+    ((770, 184, 820, 193), "SHIFT"),         # under SHIFT's mix knob (beside CHAOS)
 ]
 SUB_LEGEND = (443, 218, "SUB")
 ADSR = [(52, "ATTACK"), (138, "DECAY"), (224, "SUSTAIN"), (310, "RELEASE")]   # under the four knobs (x centre)
@@ -111,7 +112,6 @@ def front_printing(a):
     m = ndimage.binary_opening(m, iterations=1) | (L > 90)
     m[:30, :] = True                                    # the machine bezel along the top
     m[289:359, 420:580] = True                          # the display window
-    m[118:148, 828:922] = True                          # the GATE/DUCK switch's slot
     m[226:280, 428:458] = True                          # SQR/SAW/TRI's slot
     m[228:276, 512:540] = True                          # BP/LP's slot
     m[-3:, :] = True
@@ -191,6 +191,7 @@ def main():
     mask[584:625, 100:342] *= keep
     mask[584:625, 100:342] = ndimage.binary_erosion(mask[584:625, 100:342] > 0.5, iterations=1) * mask[584:625, 100:342]
     mask[458:492, 254:362] = 0                          # "8-TRACK BASS VOICE": reprinted below
+    mask[104:153, 760:993] = 0                          # GATE, MODE, DUCK and the switch: SHIFT's knob there (0.2.0)
     for (x0, y0, x1, y1), _ in RELABEL:                 # the replaced legends: the texture shows through
         mask[y0 - 2:y1 + 2, x0 - 3:x1 + 3] = 0
     for (x0, y0, x1, y1), *_ in SMALL:                  # the small ones, reprinted bigger

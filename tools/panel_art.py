@@ -234,7 +234,12 @@ def compose(tab):
         x, y, w, h = P.VOICE_CENTRE   # the copied ACCENT column: the clean circuit instead
         out.paste(c.crop((x, 40, x + w, 40 + h)), (x, y))
         return out
-    top = modules_clean([(0, 395, 385, 24), (475, 395, 525, 24)])   # the delay: the modules' last labels wiped
+    top = modules_clean([(0, 395, 385, 24), (475, 395, 525, 24)])   # the delay
+    c, _ = clean_modules()
+    for x, y, w, h in P.ALIEN_WIPE:   # the gate/duck's printing: the vein texture instead (CHAOS and SHIFT go there)
+        sx = min(x, 955 - w)   # the clean texture ends at x 963
+        sy = min(y, c.size[1] - h - 1)
+        top.paste(c.crop((sx, sy, sx + w, sy + h)), (x, y))
     low = modules_clean([(383, 395, 94, 20), (0, 414, 1000, 4)])    # the modules: the delay's first labels wiped
     out = Image.new("RGBA", (P.ART_W, 400), FINISH + (255,))
     out.paste(top.crop((0, 395, P.ART_W, 625)), (0, 0))
@@ -286,6 +291,13 @@ def make_background(tab):
         for t_, rect, txt, px in P.MODULES_LABELS:   # as the page's printed legends: pale letters with an ice glow
             if t_ == tab:
                 printed_label(page, rect, txt, px)
+        if tab == 2:   # 0.2.0: CHAOS and SHIFT's titles and legends
+            for cx, cy, txt in P.ALIEN_TITLES:
+                px_, py_ = P.page(tab, cx, cy)
+                printed_label(page, (px_ - 80, py_ - 10, 160, 20), txt, 15)
+            for cx, cy, txt in P.ALIEN_LABELS:
+                px_, py_ = P.page(tab, cx, cy)
+                printed_label(page, (px_ - 60, py_ - 9, 120, 18), txt, 12)
         for t_, (x0, y0, x1, y1), txt, c, cap in P.MODULES_REPRINT:
             if t_ != tab:
                 continue
@@ -335,11 +347,11 @@ def build_mixer_bg(page):
         M = P.MIX
         nx, ny, nw, nh = M["num"]
         page.alpha_composite(lit_text(str(i + 1), nw, nh, fit_font("8", nw - 6, nh - 6)), (x0 + nx, y0 + ny))
-        for k, txt in (("pan_label", "PAN"), ("snd_label", "DLY SEND"), ("lvl_label", "LEVEL"), ("mute_label", "MUTE"),
-                       ("solo_label", "SOLO")):
+        for k, txt in (("pan_label", "PAN"), ("snd_label", "DLY SEND"), ("chs_label", "CHAOS"), ("shs_label", "SHIFT"),
+                       ("lvl_label", "LEVEL"), ("mute_label", "MUTE"), ("solo_label", "SOLO")):
             x, y, w, h = M[k]
             printed_label(page, (x0 + x, y0 + y, w, h), txt, 11)
-        for k in ("pan", "snd"):
+        for k in ("pan", "snd", "chs", "shs"):
             cx, cy, s = M[k]
             rl = ring_layer(s)
             page.alpha_composite(rl, (R(x0 + cx - rl.size[0] / 2), R(y0 + cy - rl.size[1] / 2)))
@@ -800,6 +812,16 @@ def build_page(sk, tab):
             sw_ = (hx1 - hx0 + 8) / n
             radio(key, [prect(tab, hx0 - 4 + i * sw_, hy - 10, sw_, 20) for i in range(n)],
                   lambda i, img, rect, thumbs=thumbs: thumb_at(img, rect, thumbs[i], sl_pic), lab="hs")
+        # CHAOS DEST, SHIFT MODE (0.2.0)
+        for key, bx, by, bw, bh, n in P.BARS2:
+            col_w = bw / n
+            words = sk.opt_names(key)
+            zr = [prect(tab, bx + i * col_w, by, col_w, bh) for i in range(n)]
+            wpx = min(P.BAR_TEXT, zr[0][3] - 5)
+            radio(key, zr,
+                  lambda i, img, rect, words=words, wpx=wpx: word_cell(img, rect, rect, words[i], True, wpx),
+                  lambda i, img, rect, words=words, wpx=wpx: word_cell(img, rect, rect, words[i], False, wpx),
+                  lab="bar")
         # FREE / TEMPO
         sxx, sy0, sy1 = P.SYNC_SLOT
         zones = [prect(tab, *z) for z in P.SYNC_ZONES]
@@ -923,7 +945,6 @@ def build_page(sk, tab):
         selector("track", P.TRACK_SEL, ["TRACK %d" % (i + 1) for i in range(8)])
         selector("voice", P.VOICE_SEL, gen_params.VOICES)
     if tab == 2:
-        selector("gd_ch", P.CH_SEL, ["%2d" % (i + 1) for i in range(16)])
         # the preset slot: the same look, page pixels
         rect = P.PRESET_SLOT
         texts = ["%02d" % (i + 1) for i in range(gen_params.NUM_SLOTS)]
@@ -1026,7 +1047,7 @@ def build_mixer(sk, bg, kids, place, knob, thumb):
 
     for i, x0 in enumerate(P.MIX_STRIPS):
         n = i + 1
-        for k, key in (("pan", "mix_pan%d" % n), ("snd", "mix_snd%d" % n)):
+        for k, key in (("pan", "mix_pan%d" % n), ("snd", "mix_snd%d" % n), ("chs", "mix_chs%d" % n), ("shs", "mix_shs%d" % n)):
             cx, cy, s = M[k]
             knob(key, x0 + cx, y0 + cy, s, "big")
         fx, fy, fw, fh = M["fader"]

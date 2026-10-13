@@ -27,11 +27,11 @@
     },
     {
      "n": 6,
-     "key": "gd_rel"
+     "key": "chaos_depth"
     },
     {
      "n": 7,
-     "key": "gd_mode"
+     "key": "shift_mix"
     },
     {
      "n": 8,
@@ -284,27 +284,27 @@
     },
     {
      "n": 9,
-     "key": "gd_depth"
+     "key": "chaos_rate"
     },
     {
      "n": 10,
-     "key": "gd_hold"
+     "key": "chaos_wild"
     },
     {
      "n": 11,
-     "key": "gd_atk"
+     "key": "chaos_dest"
     },
     {
      "n": 12,
-     "key": "gd_rel"
+     "key": "shift_freq"
     },
     {
      "n": 13,
-     "key": "gd_mode"
+     "key": "shift_fb"
     },
     {
      "n": 14,
-     "key": "gd_ch"
+     "key": "shift_mode"
     },
     {
      "n": 15,
@@ -472,6 +472,70 @@
     },
     {
      "n": 25,
+     "key": "mix_chs1"
+    },
+    {
+     "n": 26,
+     "key": "mix_chs2"
+    },
+    {
+     "n": 27,
+     "key": "mix_chs3"
+    },
+    {
+     "n": 28,
+     "key": "mix_chs4"
+    },
+    {
+     "n": 29,
+     "key": "mix_chs5"
+    },
+    {
+     "n": 30,
+     "key": "mix_chs6"
+    },
+    {
+     "n": 31,
+     "key": "mix_chs7"
+    },
+    {
+     "n": 32,
+     "key": "mix_chs8"
+    },
+    {
+     "n": 33,
+     "key": "mix_shs1"
+    },
+    {
+     "n": 34,
+     "key": "mix_shs2"
+    },
+    {
+     "n": 35,
+     "key": "mix_shs3"
+    },
+    {
+     "n": 36,
+     "key": "mix_shs4"
+    },
+    {
+     "n": 37,
+     "key": "mix_shs5"
+    },
+    {
+     "n": 38,
+     "key": "mix_shs6"
+    },
+    {
+     "n": 39,
+     "key": "mix_shs7"
+    },
+    {
+     "n": 40,
+     "key": "mix_shs8"
+    },
+    {
+     "n": 41,
      "key": "mix_master"
     }
    ]

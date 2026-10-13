@@ -90,9 +90,10 @@ KNOBS = [
     (0, "lfo_lvl", 802, 383, 98, "big", 1), (0, "sub_lvl", 931, 385, 98, "big", 1),
     (0, "sel", 432, 424, 106, "encoder", 1), (0, "note", 563, 425, 106, "encoder", 1),
     (0, "dly_wet", 85, 100, 64, "big", 1), (0, "dly_time", 242, 120, 128, "big", 0),
-    (0, "gd_rel", 712, 142, 72, "big", 1),
+    # 0.2.0: CHAOS (its depth) and SHIFT (its mix) where the gate/duck's RELEASE and GATE / DUCK switch were
+    (0, "chaos_depth", 712, 142, 72, "big", 1), (0, "shift_mix", 795, 142, 72, "big", 1),
     # LXRXXL's randomizer amounts (their own knobs; the scale is printed around them: MOD_ART)
-    (0, "srnd_amt", 370.3, 151.3, 50, "mod_yellow", 1), (0, "rnd_amt", 637.5, 151.3, 50, "mod_green", 1),
+    (0, "srnd_amt", 367, 151.3, 68, "mod_yellow", 1), (0, "rnd_amt", 640, 151.3, 68, "mod_green", 1),
     # VOICE: the ACCENT column (top), FM RATIO and FM LVL under SLIDE TIME; the pitch envelope under the SOUND selector
     (1, "fm_ratio", 432.0, 218.75, 40, "big", 1), (1, "fm_lvl", 497.7, 218.75, 40, "big", 1),
     (1, "acc_amt", 419, 88, 52, "big", 1), (1, "acc_sweep", 419, 161, 52, "big", 1),
@@ -104,8 +105,9 @@ KNOBS = [
     (2, "sw_mix", 657, mods(356), 50, "big", 1),
     (2, "dly_time", 145.5, fx(519.5), 130, "big", 0), (2, "dly_in", 272, fx(467), 50, "big", 1),
     (2, "dly_fb", 344, fx(468), 50, "big", 1), (2, "dly_wet", 429, fx(452), 64, "big", 1),
-    (2, "gd_depth", 621, fx(518), 72, "big", 1), (2, "gd_hold", 722, fx(517), 72, "big", 1),
-    (2, "gd_atk", 818, fx(517), 72, "big", 1), (2, "gd_rel", 918, fx(517), 72, "big", 1),
+    # 0.2.0: CHAOS and SHIFT where the gate/duck was
+    (2, "chaos_rate", 621, fx(517), 64, "big", 1), (2, "chaos_wild", 722, fx(517), 64, "big", 1),
+    (2, "shift_freq", 830, fx(517), 64, "big", 1), (2, "shift_fb", 930, fx(517), 64, "big", 1),
 ]
 KNOB_MAX = 126      # page px: a knob's 128-frame filmstrip stays under MPC's 16384 px (docs/NOTES.md, the framework's rule)
 
@@ -153,8 +155,6 @@ SWITCHES = [
     (0, "wave", [(442.5, 238), (442.5, 253), (442.5, 268)],
      [(430, 231, 66, 15), (430, 246, 66, 15), (430, 261, 66, 15)], "v"),
     (0, "fmode", [(526, 245), (526, 261)], [(514, 231, 52, 22), (514, 253, 52, 22)], "v"),
-    (0, "gd_mode", [(849.5, 133.5), (903.5, 133.5)], [(764, 118, 112, 28), (876, 118, 112, 28)], "h"),
-    (2, "gd_mode", [(842.5, fx(450.5)), (896.5, fx(450.5))], [(756, fx(436), 113, 26), (869, fx(436), 113, 26)], "h"),
     (2, "dly_mode", [(292.5, fx(605.5)), (346.5, fx(605.5))], [(218, fx(592), 102, 22), (320, fx(592), 122, 22)], "h"),
 ]
 
@@ -169,7 +169,7 @@ for k, x, y in [("link", 899, 51), ("mute", 960, 51), ("shift", 42, 471), ("play
 for i, x in enumerate([39, 101, 164, 225, 287, 350, 411, 472, 534, 595, 658, 719, 781, 843, 905, 968]):
     KEYS["s%d" % (i + 1)] = (0, x, 545, 57)
 for k, x, y in [("d_add", 270.5, 539.5), ("d_hold", 336.5, 540), ("d_rev", 410.5, 540), ("d_tap", 490.5, 539.5),
-                ("gd_on", 886.5, 600.5)]:
+                ]:
     KEYS[k] = (2, x, fx(y), 36)   # the coloured keys of the delay and the duck: printed lit, unlit made from them
 
 # VOICE RESET (SHIFT: MUTE ALL): Suns Kiefer's button on its bezel, PANEL, artwork pixels (centre)
@@ -227,7 +227,12 @@ MOD_ART = [("mod_label_question.png", 549, 140, 14), ("mod_label_warning.png", 7
 # MODULES: the other sliders' legends in label windows like the voice's (fixed text, page pixels)
 FIXED_WINDOWS = [((round(x * 1.28 - 33), 270, 66, 40), t) for x, t in
                  zip(RIGHT_X, ["ATTACK", "DECAY", "SUSTAIN", "RELEASE", "ATTACK", "DECAY", "SUSTAIN", "RELEASE"])]
-CH_SEL = (2, 661, fx(585), 40, 34)                         # FX MOD: the duck's MIDI channel
+# FX MOD (0.2.0): CHAOS's destination and SHIFT's mode, word bars like the MODULATOR's (artwork x, y, w, h, options);
+# the gate/duck's printing wiped (modules_bg.png pixels)
+BARS2 = [("chaos_dest", 566, fx(578), 212, 22, 5), ("shift_mode", 812, fx(578), 160, 22, 2)]
+ALIEN_WIPE = [(552, 395 + 72, 448, 158), (742, 395 + 26, 258, 48)]
+ALIEN_TITLES = [(672, fx(470), "CHAOS"), (880, fx(470), "SHIFT")]
+ALIEN_LABELS = [(621, fx(562), "RATE"), (722, fx(562), "WILD"), (830, fx(562), "FREQ"), (930, fx(562), "FEEDBACK")]
 
 # ---------------------------------------------------------------- presets (FX MIXER, page pixels)
 # the slot number (the display's font) with its label, and the four keys: glass centre, label centre
@@ -243,9 +248,12 @@ MIX_STRIPS = [6 + i * STRIP_W for i in range(8)]          # each strip's left ed
 MASTER_X = 6 + 8 * STRIP_W                                # the MASTER strip: to the right edge
 MIX = {   # inside a strip (x from its left edge, y from MIXER_Y)
     "num": (8, 6, 44, 38),            # the track's number, in the display's font
-    "pan": (44, 128, 72),             # knob: cx, cy, size
-    "snd": (44, 296, 72),
-    "pan_label": (0, 66, 88, 18), "snd_label": (0, 234, 88, 18),
+    "pan": (44, 100, 60),             # knob: cx, cy, size
+    "snd": (44, 200, 60),
+    "chs": (44, 300, 60),             # 0.2.0: CHAOS amount, SHIFT send
+    "shs": (44, 400, 60),
+    "pan_label": (0, 50, 88, 18), "snd_label": (0, 150, 88, 18),
+    "chs_label": (0, 250, 88, 18), "shs_label": (0, 350, 88, 18),
     "fader": (90, 40, 44, 424),       # the slider box (the artwork's LEVEL box): x, y, w, h
     "lvl_label": (78, 12, 64, 18),
     "mute": (4, 474, 66, 58), "solo": (72, 474, 66, 58),          # the step keys' size
@@ -276,8 +284,8 @@ def controls(tab):
         for key, x, y, w, h, n in BARS:
             out.append((key,) + page(tab, x + w / 2, y + h / 2))
         out.append(("mod_sync",) + page(tab, SYNC_SLOT[0], (SYNC_SLOT[1] + SYNC_SLOT[2]) / 2))
-        t, x, y, w, h = CH_SEL
-        out.append(("gd_ch",) + page(tab, x + w / 2, y + h / 2))
+        for key, x, y, w, h, n in BARS2:
+            out.append((key,) + page(tab, x + w / 2, y + h / 2))
         x, y, w, h = PRESET_SLOT
         out.append(("pr_slot", x + w / 2, y + h / 2))
     seen, uniq = set(), []
@@ -333,7 +341,7 @@ def mapped_keys(tab):
     """the controls a tab can put on a knob"""
     keys = [c[0] for c in controls(tab)]
     if tab == 3:
-        keys += ["mix_%s%d" % (w, i) for w in ("lvl", "pan", "snd") for i in range(1, 9)] + ["mix_master"]
+        keys += ["mix_%s%d" % (w, i) for w in ("lvl", "pan", "snd", "chs", "shs") for i in range(1, 9)] + ["mix_master"]
     return keys
 
 
