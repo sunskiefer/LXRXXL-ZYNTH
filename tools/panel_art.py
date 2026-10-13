@@ -813,10 +813,11 @@ def build_page(sk, tab):
     if tab == 1:
         for key, cx, cy, size in P.VOICE_KEYS:
             box = size + 12
-            rect = (R(cx - box / 2), R(cy - box / 2), box, box)
+            tw, th = P.VOICE_KEY_TOUCH   # the touch area: wider than the key's picture
+            rect = (R(cx - tw / 2), R(cy - th / 2), tw, th)
             imgs = []
             for lit_ in (False, True):
-                im = bg.crop((rect[0], rect[1], rect[0] + box, rect[1] + box)).convert("RGBA")
+                im = bg.crop((rect[0], rect[1], rect[0] + tw, rect[1] + th)).convert("RGBA")
                 big_ = Image.new("RGBA", (box * SS, box * SS), (0, 0, 0, 0))
                 dd = ImageDraw.Draw(big_)
                 c, r = box * SS / 2, size * SS / 2
@@ -827,15 +828,15 @@ def build_page(sk, tab):
                       [(c + a, c), (c - a * 0.8, c - a), (c - a * 0.8, c + a)]
                 dd.polygon(pts, fill=LIT + (255,) if lit_ else (150, 175, 188, 255))
                 small = big_.resize((box, box), Image.LANCZOS)
+                at = ((tw - box) // 2, (th - box) // 2)
                 if lit_:
-                    glow = small.filter(ImageFilter.GaussianBlur(3))
-                    im.alpha_composite(glow)
-                im.alpha_composite(small)
+                    im.alpha_composite(small.filter(ImageFilter.GaussianBlur(3)), at)
+                im.alpha_composite(small, at)
                 imgs.append(im)
             off_n = sk.save(imgs[0], "zy_m_key_%s_off.png" % key)
             on_n = sk.save(imgs[1], "zy_m_key_%s_on.png" % key)
             dkey = "bzKey_%s" % key
-            sk.defs.append(definition(dkey, KEY_ACTIONS, [focus(box, box), button(on_n, off_n, 1, 1, box, box)]))
+            sk.defs.append(definition(dkey, KEY_ACTIONS, [focus(tw, th), button(on_n, off_n, 1, 1, tw, th)]))
             place(dkey, key, key, rect)
         # the label windows: one picture per voice over each of the six sliders' legends
         names = gen_params.VOICES

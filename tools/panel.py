@@ -150,7 +150,8 @@ DISPLAY_BOX = (420, 289, 160, 70)                       # the window repainted u
 TRACK_SEL = (1, 388, 3, 160, 31)                         # MODULES: "TRACK n" (art rect)
 VOICE_SEL = (1, 98, 1, 168, 31)                          # MODULES: the VOICE selector, the voice's name (art rect)
 VOICE_LABEL = (24, 2, 76, 38)                            # page rect: its legend "VOICE"
-VOICE_KEYS = [("v_prev", 362, 21, 30), ("v_next", 398, 21, 30)]   # page: centre, size: VOICE < and VOICE >
+VOICE_KEYS = [("v_prev", 368, 21, 30), ("v_next", 422, 21, 30)]   # page: centre, size: VOICE < and VOICE >
+VOICE_KEY_TOUCH = (50, 42)                               # their touch area (page px), larger than the key
 # MODULES: printed legends (page rect, text, px) of the controls ZYNTH adds
 MODULES_LABELS = [((518, 310, 70, 13), "FM RATIO", 10), ((602, 310, 70, 13), "RELEASE", 10)]
 # PANEL: LXRXXL's randomizers beside the panic key (page pixels): each key's picture, centre and size; the scale

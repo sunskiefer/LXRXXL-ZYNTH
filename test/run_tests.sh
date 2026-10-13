@@ -11,6 +11,7 @@ ENG=$(echo $OBJS | tr ' ' '\n' | grep -v vst2_wrap | tr '\n' ' ')
 $CC -O1 -g -w -Ibuild third_party/mpc-vst-plugins/tools/host_test.c $OBJS -lm -lpthread -ldl -o build/host/host_test
 $CC -O1 -g -w -std=gnu11 -Ibuild -Ithird_party/mpc-vst-plugins/wrapper $INCS test/engine_test.c $ENG -lm -lpthread -ldl -o build/host/engine_test
 $CC -O1 -g -w -Ibuild -Isrc test/mpc_sim.c $OBJS -lm -lpthread -ldl -o build/host/mpc_sim
+$CC -O1 -g -w -std=gnu11 -Isrc test/eng_test.c $ENG -lm -lpthread -ldl -o build/host/eng_test
 VG="valgrind -q --error-exitcode=9"
 [ "${NOVG:-}" ] && VG=""
 (cd build/host && $VG ./eng_test && $VG ./host_test && $VG ./engine_test && $VG ./mpc_sim)

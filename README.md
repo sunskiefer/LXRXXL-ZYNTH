@@ -209,7 +209,7 @@ LXRXXL ZYNTH, like LXRXXL and LXRXXL BAZZLINE, is under the **LXR02 Open-Source 
 or commercial use**, and every binary comes with its complete source (each release has a `-source.zip`). The parts
 under `third_party/` keep their licenses: Braids, Plaits and stmlib (Emilie Gillet, Mutable Instruments) are MIT
 (`third_party/mutable/LICENSE`), mpc-vst-plugins is MIT. The DX7 algorithm table in `src/eng_fm.c` is Apache 2.0
-(Copyright 2012 Google Inc.). The artwork is by Suns Kiefer: ask before reusing it. The fonts are SIL OFL 1.1.
+(Copyright 2012 Google Inc.). Artwork by Suns Kiefer: ask before reusing it. The fonts are SIL OFL 1.1.
 
 *(This is a plain-language summary, not legal advice. The `LICENSE` files are what count.)*
 
@@ -277,7 +277,8 @@ runs with flush-to-zero on (denormals made the physical models five times slower
 
 ## Credits and license
 
-- **Artwork:** Suns Kiefer (from his LXRXXL BAZZLINE artwork, the randomizers from his LXRXXL artwork).
+- **Developer:** L'Cronx.
+- **Artwork by Suns Kiefer**
 - **The LXR's oscillator tables:** Julian Schmidt (Sonic Potions LXR) and Brendan Clarke (LXR02Open), LXR02
   Open-Source license.
 - **Braids, Plaits, stmlib:** Emilie Gillet (Mutable Instruments), MIT.
