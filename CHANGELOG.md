@@ -1,6 +1,8 @@
 # Changelog
 
 ## 0.1.0
+- MODULES: the envelope, LEVEL and PAN legends in ice label windows like the voice's; FM RATIO and RELEASE lower
+  and to the left. PANEL: the randomizer amount knobs with the white segmented ring of the other knobs.
 - First release of LXRXXL ZYNTH, a variation of LXRXXL BAZZLINE 0.2.8 (its sequencer, panel, voice chain, delay,
   gate/duck, mixer and presets).
 - Sixteen voices, one per track (the VOICE selector on MODULES: < >, the data wheel, a Q-Link): ANALOG, TRIO, FM6,

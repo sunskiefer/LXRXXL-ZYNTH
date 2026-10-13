@@ -242,6 +242,12 @@ def make_background(tab):
             label(d, rect, txt, px)
         for rect in P.LABEL_WINDOWS:   # under the voice's labels (pictures, one per voice)
             window(d, rect, 5)
+        for rect, txt in P.FIXED_WINDOWS:   # the envelope's, LEVEL's and PAN's legends in the same windows
+            window(d, rect, 5)
+            x, y, w, h = rect
+            im = page.crop((x, y, x + w, y + h))
+            window_label(im, txt)
+            page.paste(im, (x, y))
     if tab == 2:
         build_mixer_bg(page)
         # the presets' legends, in the display's orange (as drawn by Suns Kiefer's mockup)

@@ -69,9 +69,9 @@ KNOBS = [
     (0, "dly_wet", 85, 100, 64, "big", 1), (0, "dly_time", 242, 120, 128, "big", 0),
     (0, "gd_rel", 712, 142, 72, "big", 1),
     # LXRXXL's randomizer amounts (their own knobs; the scale is printed around them: MOD_ART)
-    (0, "srnd_amt", 370.3, 151.3, 50, "mod_yellow", 0), (0, "rnd_amt", 637.5, 151.3, 50, "mod_green", 0),
+    (0, "srnd_amt", 370.3, 151.3, 50, "mod_yellow", 1), (0, "rnd_amt", 637.5, 151.3, 50, "mod_green", 1),
     # MODULES: FM RATIO (FM LVL's ratio, any voice) and RELEASE (the amp envelope's), under SLIDE TIME
-    (1, "fm_ratio", 463.3, 203.1, 34, "big", 1), (1, "vca_rel", 518.0, 203.1, 34, "big", 1),
+    (1, "fm_ratio", 451.6, 217.2, 34, "big", 1), (1, "vca_rel", 506.3, 217.2, 34, "big", 1),
     (1, "acc_amt", 419, 88, 52, "big", 1), (1, "acc_sweep", 419, 161, 52, "big", 1),
     (1, "slide_time", 490, 125.5, 50, "big", 1), (1, "keytrack", 341, 382, 50, "big", 1),
     (1, "sw_rate", 494, 354, 48, "big", 1), (1, "detune", 577, 380, 50, "big", 1),
@@ -152,12 +152,15 @@ VOICE_SEL = (1, 98, 4, 168, 31)                          # MODULES: the VOICE se
 VOICE_LABEL = (24, 6, 76, 38)                            # page rect: its legend "VOICE"
 VOICE_KEYS = [("v_prev", 362, 24, 30), ("v_next", 398, 24, 30)]   # page: centre, size: VOICE < and VOICE >
 # MODULES: printed legends (page rect, text, px) of the controls ZYNTH adds
-MODULES_LABELS = [((561, 286, 64, 13), "FM RATIO", 8), ((631, 286, 64, 13), "RELEASE", 8)]
+MODULES_LABELS = [((546, 304, 64, 13), "FM RATIO", 8), ((616, 304, 64, 13), "RELEASE", 8)]
 # PANEL: LXRXXL's randomizers beside the panic key (page pixels): each key's picture, centre and size; the scale
 # printed round each amount knob; the legend ("?" for STEP RANDOM, the warning sign for SOUND RANDOM)
 MOD_KEYS = [("srnd", "mod_key_yellow.png", 549, 176, 40), ("rnd", "mod_key_green.png", 744, 176, 40)]
-MOD_ART = [("mod_scale_yellow.png", 474, 152, 82), ("mod_scale_green.png", 816, 152, 82),
-           ("mod_label_question.png", 549, 140, 14), ("mod_label_warning.png", 744, 138, 30)]
+MOD_ART = [("mod_label_question.png", 549, 140, 14), ("mod_label_warning.png", 744, 138, 30)]   # (the amount knobs: the
+# white segmented ring of every other knob, not LXRXXL's coloured scales)
+# MODULES: the other sliders' legends in label windows like the voice's (fixed text, page pixels)
+FIXED_WINDOWS = [((round(x * 1.28 - 33), 270, 66, 40), t) for (_, x, _, _), t in
+                 zip(VSLIDERS[6:], ["VCF|ATK", "VCF|DEC", "VCA|ATK", "VCA|DEC", "PITCH|AMT", "PITCH|DEC", "LEVEL", "PAN"])]
 CH_SEL = (2, 661, 585, 40, 34)                             # FX MIXER: the duck's MIDI channel
 
 # ---------------------------------------------------------------- presets (FX MIXER, page pixels)
