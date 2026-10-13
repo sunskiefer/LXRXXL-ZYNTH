@@ -1,0 +1,5 @@
+{ "id": "lxrxxl-zynth", "name": "LXRXXL ZYNTH", "author": "L'Cronx", "repo": "sunskiefer/LXRXXL-ZYNTH",
+  "kind": "instrument", "style": "synth", "tags": ["synth", "groovebox", "fm", "dx7", "wavetable", "braids", "plaits", "physical-modelling", "granular", "organ", "chiptune", "lxr", "lxr-02", "sequencer", "delay", "sidechain"],
+  "license": "LicenseRef-LXR02-Open", "source_available": true,
+  "screenshot": "https://raw.githubusercontent.com/sunskiefer/LXRXXL-ZYNTH/main/docs/img/panel.png",
+  "summary": "An 8-track synth: a variation of LXRXXL BAZZLINE where each track picks one of sixteen voices (ANALOG, TRIO, FM6, FM4, PHASE, WAVE, CHIP, MACRO, WHEEL, VOICE, PHYS, GRAIN, NOISE, LXR TONE, LXR METAL, BAZZ) whose six sliders change with the voice, through BAZZLINE's FM, sub, swarm, drive and Polivoks / diode filter. The LXR-02 style sequencer with step functions, LXRXXL's sound and step randomizers, a tape/digital delay and a MIDI gate/duck. Three full-screen pages of artwork by Suns Kiefer, an 8-track mixer, sound / performance presets on the device. MACRO, WAVE and PHYS use Mutable Instruments' Braids and Plaits (MIT). Non-commercial license." }

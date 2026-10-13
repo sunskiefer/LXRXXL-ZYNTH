@@ -1,0 +1,519 @@
+{
+ "plugin": "LXRXXL ZYNTH",
+ "format": "qlink-map 1",
+ "savedAt": "2026-10-13T17:00:00.000Z",
+ "pages": {
+  "panel": {
+   "knobs": [
+    {
+     "n": 1,
+     "key": "srnd_amt"
+    },
+    {
+     "n": 2,
+     "key": "dly_wet"
+    },
+    {
+     "n": 3,
+     "key": "dly_time"
+    },
+    {
+     "n": 4,
+     "key": "sel"
+    },
+    {
+     "n": 5,
+     "key": "note"
+    },
+    {
+     "n": 6,
+     "key": "gd_rel"
+    },
+    {
+     "n": 7,
+     "key": "gd_mode"
+    },
+    {
+     "n": 8,
+     "key": "rnd_amt"
+    },
+    {
+     "n": 9,
+     "key": "drive"
+    },
+    {
+     "n": 10
+    },
+    {
+     "n": 11,
+     "key": "detune"
+    },
+    {
+     "n": 12,
+     "key": "vca_env"
+    },
+    {
+     "n": 13,
+     "key": "fm_lvl"
+    },
+    {
+     "n": 14,
+     "key": "sub_lvl"
+    },
+    {
+     "n": 15,
+     "key": "noise_lvl"
+    },
+    {
+     "n": 16,
+     "key": "wave"
+    },
+    {
+     "n": 17,
+     "key": "vcf_env"
+    },
+    {
+     "n": 18,
+     "key": "resonance"
+    },
+    {
+     "n": 19,
+     "key": "cutoff"
+    },
+    {
+     "n": 20,
+     "key": "lfo_rate"
+    },
+    {
+     "n": 21,
+     "key": "lfo_lvl"
+    },
+    {
+     "n": 22,
+     "key": "env_cv"
+    },
+    {
+     "n": 23,
+     "key": "fmode"
+    }
+   ]
+  },
+  "modules": {
+   "knobs": [
+    {
+     "n": 1,
+     "key": "v1"
+    },
+    {
+     "n": 2,
+     "key": "v2"
+    },
+    {
+     "n": 3,
+     "key": "v3"
+    },
+    {
+     "n": 4,
+     "key": "v4"
+    },
+    {
+     "n": 5,
+     "key": "v5"
+    },
+    {
+     "n": 6,
+     "key": "v6"
+    },
+    {
+     "n": 7,
+     "key": "drive_pos"
+    },
+    {
+     "n": 8,
+     "key": "curve"
+    },
+    {
+     "n": 9,
+     "key": "vcf_atk"
+    },
+    {
+     "n": 10,
+     "key": "vcf_dec"
+    },
+    {
+     "n": 11,
+     "key": "vca_atk"
+    },
+    {
+     "n": 12,
+     "key": "vca_env"
+    },
+    {
+     "n": 13,
+     "key": "env_cv"
+    },
+    {
+     "n": 14,
+     "key": "pitch_dec"
+    },
+    {
+     "n": 15,
+     "key": "level"
+    },
+    {
+     "n": 16,
+     "key": "pan"
+    },
+    {
+     "n": 17,
+     "key": "fmodel"
+    },
+    {
+     "n": 18,
+     "key": "keytrack"
+    },
+    {
+     "n": 19,
+     "key": "acc_amt"
+    },
+    {
+     "n": 20,
+     "key": "slide_time"
+    },
+    {
+     "n": 21,
+     "key": "acc_sweep"
+    },
+    {
+     "n": 22,
+     "key": "fm_ratio"
+    },
+    {
+     "n": 23,
+     "key": "track"
+    },
+    {
+     "n": 24,
+     "key": "voice"
+    },
+    {
+     "n": 25,
+     "key": "sw_mode"
+    },
+    {
+     "n": 26,
+     "key": "sw_rate"
+    },
+    {
+     "n": 27,
+     "key": "detune"
+    },
+    {
+     "n": 28,
+     "key": "sw_mix"
+    },
+    {
+     "n": 29,
+     "key": "mod_wave"
+    },
+    {
+     "n": 30,
+     "key": "mod_dest"
+    },
+    {
+     "n": 31,
+     "key": "mod_sync"
+    },
+    {
+     "n": 32,
+     "key": "vca_rel"
+    }
+   ]
+  },
+  "fx": {
+   "name": "FX MIXER",
+   "knobs": [
+    {
+     "n": 1,
+     "qlinkPage": 1,
+     "knob": 1,
+     "key": "dly_time",
+     "name": "DELAY TIME"
+    },
+    {
+     "n": 2,
+     "qlinkPage": 1,
+     "knob": 2,
+     "key": "dly_in",
+     "name": "DELAY IN LVL"
+    },
+    {
+     "n": 3,
+     "qlinkPage": 1,
+     "knob": 3,
+     "key": "dly_fb",
+     "name": "FEEDBACK"
+    },
+    {
+     "n": 4,
+     "qlinkPage": 1,
+     "knob": 4,
+     "key": "dly_wet",
+     "name": "DRY/WET"
+    },
+    {
+     "n": 5,
+     "qlinkPage": 1,
+     "knob": 5,
+     "key": "dly_mode",
+     "name": "DELAY MODE"
+    },
+    {
+     "n": 6,
+     "qlinkPage": 1,
+     "knob": 6,
+     "key": null,
+     "name": null
+    },
+    {
+     "n": 7,
+     "qlinkPage": 1,
+     "knob": 7,
+     "key": null,
+     "name": null
+    },
+    {
+     "n": 8,
+     "qlinkPage": 1,
+     "knob": 8,
+     "key": null,
+     "name": null
+    },
+    {
+     "n": 9,
+     "qlinkPage": 2,
+     "knob": 1,
+     "key": "gd_depth",
+     "name": "DEPTH"
+    },
+    {
+     "n": 10,
+     "qlinkPage": 2,
+     "knob": 2,
+     "key": "gd_hold",
+     "name": "HOLD"
+    },
+    {
+     "n": 11,
+     "qlinkPage": 2,
+     "knob": 3,
+     "key": "gd_atk",
+     "name": "ATTACK"
+    },
+    {
+     "n": 12,
+     "qlinkPage": 2,
+     "knob": 4,
+     "key": "gd_rel",
+     "name": "RELEASE"
+    },
+    {
+     "n": 13,
+     "qlinkPage": 2,
+     "knob": 5,
+     "key": "gd_mode",
+     "name": "GATE/DUCK"
+    },
+    {
+     "n": 14,
+     "qlinkPage": 2,
+     "knob": 6,
+     "key": null,
+     "name": null
+    },
+    {
+     "n": 15,
+     "qlinkPage": 2,
+     "knob": 7,
+     "key": "mix_master",
+     "name": "MASTER"
+    },
+    {
+     "n": 16,
+     "qlinkPage": 2,
+     "knob": 8,
+     "key": null,
+     "name": null
+    },
+    {
+     "n": 17,
+     "qlinkPage": 3,
+     "knob": 1,
+     "key": "mix_lvl1",
+     "name": "LEVEL 1"
+    },
+    {
+     "n": 18,
+     "qlinkPage": 3,
+     "knob": 2,
+     "key": "mix_lvl2",
+     "name": "LEVEL 2"
+    },
+    {
+     "n": 19,
+     "qlinkPage": 3,
+     "knob": 3,
+     "key": "mix_lvl3",
+     "name": "LEVEL 3"
+    },
+    {
+     "n": 20,
+     "qlinkPage": 3,
+     "knob": 4,
+     "key": "mix_lvl4",
+     "name": "LEVEL 4"
+    },
+    {
+     "n": 21,
+     "qlinkPage": 3,
+     "knob": 5,
+     "key": "mix_lvl5",
+     "name": "LEVEL 5"
+    },
+    {
+     "n": 22,
+     "qlinkPage": 3,
+     "knob": 6,
+     "key": "mix_lvl6",
+     "name": "LEVEL 6"
+    },
+    {
+     "n": 23,
+     "qlinkPage": 3,
+     "knob": 7,
+     "key": "mix_lvl7",
+     "name": "LEVEL 7"
+    },
+    {
+     "n": 24,
+     "qlinkPage": 3,
+     "knob": 8,
+     "key": "mix_lvl8",
+     "name": "LEVEL 8"
+    },
+    {
+     "n": 25,
+     "qlinkPage": 4,
+     "knob": 1,
+     "key": "mix_pan1",
+     "name": "PAN 1"
+    },
+    {
+     "n": 26,
+     "qlinkPage": 4,
+     "knob": 2,
+     "key": "mix_pan2",
+     "name": "PAN 2"
+    },
+    {
+     "n": 27,
+     "qlinkPage": 4,
+     "knob": 3,
+     "key": "mix_pan3",
+     "name": "PAN 3"
+    },
+    {
+     "n": 28,
+     "qlinkPage": 4,
+     "knob": 4,
+     "key": "mix_pan4",
+     "name": "PAN 4"
+    },
+    {
+     "n": 29,
+     "qlinkPage": 4,
+     "knob": 5,
+     "key": "mix_pan5",
+     "name": "PAN 5"
+    },
+    {
+     "n": 30,
+     "qlinkPage": 4,
+     "knob": 6,
+     "key": "mix_pan6",
+     "name": "PAN 6"
+    },
+    {
+     "n": 31,
+     "qlinkPage": 4,
+     "knob": 7,
+     "key": "mix_pan7",
+     "name": "PAN 7"
+    },
+    {
+     "n": 32,
+     "qlinkPage": 4,
+     "knob": 8,
+     "key": "mix_pan8",
+     "name": "PAN 8"
+    },
+    {
+     "n": 33,
+     "qlinkPage": 5,
+     "knob": 1,
+     "key": "mix_snd1",
+     "name": "DLY SEND 1"
+    },
+    {
+     "n": 34,
+     "qlinkPage": 5,
+     "knob": 2,
+     "key": "mix_snd2",
+     "name": "DLY SEND 2"
+    },
+    {
+     "n": 35,
+     "qlinkPage": 5,
+     "knob": 3,
+     "key": "mix_snd3",
+     "name": "DLY SEND 3"
+    },
+    {
+     "n": 36,
+     "qlinkPage": 5,
+     "knob": 4,
+     "key": "mix_snd4",
+     "name": "DLY SEND 4"
+    },
+    {
+     "n": 37,
+     "qlinkPage": 5,
+     "knob": 5,
+     "key": "mix_snd5",
+     "name": "DLY SEND 5"
+    },
+    {
+     "n": 38,
+     "qlinkPage": 5,
+     "knob": 6,
+     "key": "mix_snd6",
+     "name": "DLY SEND 6"
+    },
+    {
+     "n": 39,
+     "qlinkPage": 5,
+     "knob": 7,
+     "key": "mix_snd7",
+     "name": "DLY SEND 7"
+    },
+    {
+     "n": 40,
+     "qlinkPage": 5,
+     "knob": 8,
+     "key": "mix_snd8",
+     "name": "DLY SEND 8"
+    }
+   ]
+  }
+ }
+}

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or idea
+    url: https://github.com/sunskiefer/LXRXXL-ZYNTH/discussions
+    about: Ask how something works, share patterns and kits, or suggest a feature.
+  - name: User manual
+    url: https://github.com/sunskiefer/LXRXXL-ZYNTH#readme
+    about: "How it works, in the README."

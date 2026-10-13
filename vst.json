@@ -1,0 +1,18 @@
+{
+  "name": "LXRXXL ZYNTH",
+  "vendor": "ANDREALPHEUS",
+  "uid": "AnZy",
+  "version": 1000,
+  "so": "lxrxxl_zynth.so",
+  "params": "params.json",
+  "layout": "layout.conf",
+  "cc": false,
+  "nrpn": false,
+  "defines": {
+    "HAS_DISPLAY_REV": 1,
+    "HAS_HOST_TIME": 1,
+    "SAMPLE_ACCURATE": 1,
+    "PARAM_TEXT_MAX": 64,
+    "MODULE_DIR": "\"/sdcard/LXRXXL ZYNTH\""
+  }
+}
