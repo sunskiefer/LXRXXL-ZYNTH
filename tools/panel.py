@@ -71,7 +71,7 @@ KNOBS = [
     # LXRXXL's randomizer amounts (their own knobs; the scale is printed around them: MOD_ART)
     (0, "srnd_amt", 370.3, 151.3, 50, "mod_yellow", 1), (0, "rnd_amt", 637.5, 151.3, 50, "mod_green", 1),
     # MODULES: FM RATIO (FM LVL's ratio, any voice) and RELEASE (the amp envelope's), under SLIDE TIME
-    (1, "fm_ratio", 451.6, 217.2, 34, "big", 1), (1, "vca_rel", 506.3, 217.2, 34, "big", 1),
+    (1, "fm_ratio", 432.0, 218.75, 40, "big", 1), (1, "vca_rel", 497.7, 218.75, 40, "big", 1),
     (1, "acc_amt", 419, 88, 52, "big", 1), (1, "acc_sweep", 419, 161, 52, "big", 1),
     (1, "slide_time", 490, 125.5, 50, "big", 1), (1, "keytrack", 341, 382, 50, "big", 1),
     (1, "sw_rate", 494, 354, 48, "big", 1), (1, "detune", 577, 380, 50, "big", 1),
@@ -148,11 +148,11 @@ CELL_W, CELL_H = 40, 54
 DISPLAY_BOX = (420, 289, 160, 70)                       # the window repainted under them
 # the selectors shown in the display's font: a filmstrip each (turn, drag or the data wheel, both ways; a Q-Link)
 TRACK_SEL = (1, 388, 3, 160, 31)                         # MODULES: "TRACK n" (art rect)
-VOICE_SEL = (1, 98, 4, 168, 31)                          # MODULES: the VOICE selector, the voice's name (art rect)
-VOICE_LABEL = (24, 6, 76, 38)                            # page rect: its legend "VOICE"
-VOICE_KEYS = [("v_prev", 362, 24, 30), ("v_next", 398, 24, 30)]   # page: centre, size: VOICE < and VOICE >
+VOICE_SEL = (1, 98, 1, 168, 31)                          # MODULES: the VOICE selector, the voice's name (art rect)
+VOICE_LABEL = (24, 2, 76, 38)                            # page rect: its legend "VOICE"
+VOICE_KEYS = [("v_prev", 362, 21, 30), ("v_next", 398, 21, 30)]   # page: centre, size: VOICE < and VOICE >
 # MODULES: printed legends (page rect, text, px) of the controls ZYNTH adds
-MODULES_LABELS = [((546, 304, 64, 13), "FM RATIO", 8), ((616, 304, 64, 13), "RELEASE", 8)]
+MODULES_LABELS = [((518, 310, 70, 13), "FM RATIO", 10), ((602, 310, 70, 13), "RELEASE", 10)]
 # PANEL: LXRXXL's randomizers beside the panic key (page pixels): each key's picture, centre and size; the scale
 # printed round each amount knob; the legend ("?" for STEP RANDOM, the warning sign for SOUND RANDOM)
 MOD_KEYS = [("srnd", "mod_key_yellow.png", 549, 176, 40), ("rnd", "mod_key_green.png", 744, 176, 40)]
