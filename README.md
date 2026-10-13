@@ -28,9 +28,8 @@ and LXRXXL's own voices. **No code from those firmwares or from the M8 is used**
 can't be combined with the LXR02 license, and the M8 is closed): the voices are written here, or come from Mutable
 Instruments' MIT-licensed Braids and Plaits.
 
-> [!IMPORTANT]
-> **Not yet tested on a device.** Every build is tested offline (see [Testing](#testing)), including the ARM code under
-> qemu. Releases stay pre-releases until a version is listed in `tested.json`. Report anything odd under Issues.
+**Tested on an Akai Force** (MPC OS 3.9.1, see `tested.json`). Downloads: [Releases](https://github.com/sunskiefer/LXRXXL-ZYNTH/releases).
+Every build is also tested offline (see [Testing](#testing)). Report anything odd under Issues.
 
 ## The three pages
 
@@ -268,6 +267,8 @@ Offline, every build (`test/run_tests.sh`, and in CI):
 - **The MPC simulation** (through the VST2 wrapper only, also built for ARM and run under qemu): MPC's play and the
   panel's PLAY, the display, TRACK, the VOICE selector (its keys, the data wheel and a Q-Link), FM6 played, the
   readout, the encoders, SHIFT functions, the duck, the project saved and loaded, RESET.
+
+On a device: 0.1.0 on an Akai Force, MPC OS 3.9.1 (`tested.json`).
 
 Worst case offline (all eight tracks on the heaviest voices with UNISON, FM, sub and noise, plus the delay and the
 duck): about 150 µs per 128-frame block on an x86 core (LXRXXL BAZZLINE's worst case was about 140 µs). The audio

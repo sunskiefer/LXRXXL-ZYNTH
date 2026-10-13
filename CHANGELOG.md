@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.1.0
+- Tested on an Akai Force (MPC OS 3.9.1).
 - MODULES: the envelope, LEVEL and PAN legends in ice label windows like the voice's; FM RATIO and RELEASE lower
   and centred, a little bigger; the VOICE selector and its keys a notch up. PANEL: the randomizer amount knobs with the white segmented ring of the other knobs.
 - First release of LXRXXL ZYNTH, a variation of LXRXXL BAZZLINE 0.2.8 (its sequencer, panel, voice chain, delay,
