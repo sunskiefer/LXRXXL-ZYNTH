@@ -53,7 +53,7 @@ the two randomizers, CHAOS and SHIFT, the mixer, presets, Q-Links and automation
 
 ## 2. First five minutes
 
-1. Load **LXRXXL ZYNTH** (ANDREALPHEUS) on a plugin track. The factory project is loaded: one voice per track.
+1. Load **LXRXXL ZYNTH** (L'Cronx) on a plugin track. The factory project is loaded: one voice per track.
 2. Press **play** on MPC (or ▷ on the PANEL). Pattern A1 plays.
 3. Tap **TRACK 1..8** on the PANEL to pick a track. Every knob now shows that track's sound.
 4. Turn **TIMBRE** and **MORPH**: they are the voice's two most expressive controls (the readout names them).

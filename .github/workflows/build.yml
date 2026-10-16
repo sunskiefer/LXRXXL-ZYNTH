@@ -50,10 +50,10 @@ jobs:
           VERSION="${{ steps.ver.outputs.version }}"
           python3 third_party/mpc-vst-plugins/tools/release.py \
             --so build/arm/lxrxxl_zynth.so \
-            --skin "build/package/ANDREALPHEUS - VST - LXRXXL ZYNTH" \
+            --skin "build/package/L'Cronx - VST - LXRXXL ZYNTH" \
             --entry build/pluginlist-entry.xml \
             --version "$VERSION" \
-            --about "LXRXXL ZYNTH by ANDREALPHEUS: an 8-track synth with sixteen voices, a variation of LXRXXL BAZZLINE, for MPC OS" \
+            --about "LXRXXL ZYNTH by L'Cronx: an 8-track synth with sixteen voices, a variation of LXRXXL BAZZLINE, for MPC OS" \
             --id lxrxxl-zynth --repo sunskiefer/LXRXXL-ZYNTH --license LicenseRef-LXR02-Open \
             -o dist
           # the LXR02 Open-Source license: a binary goes with its complete source, released beside it

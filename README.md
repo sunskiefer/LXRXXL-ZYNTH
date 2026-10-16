@@ -51,7 +51,7 @@ under Issues.
 
 ## Quick start
 
-1. Install it (see [Installing](#installing)) and load **LXRXXL ZYNTH** (ANDREALPHEUS) on a plugin track.
+1. Install it (see [Installing](#installing)) and load **LXRXXL ZYNTH** (L'Cronx) on a plugin track.
 2. Press play: the factory project plays. TRACK 1-8 pick the track every knob shows.
 3. Turn **TIMBRE** and **MORPH**. On the **VOICE** page, **◄ ►** change the voice and **SOUND ◄ ►** its starter sounds.
 4. Tap **STEP RANDOM** (the yellow "?" key) on a few tracks: new parts over the pattern's harmony.
@@ -91,11 +91,11 @@ ssh -t root@<device-ip> sh /tmp/LXRXXL-ZYNTH-<version>/install.sh
 
 The installer:
 1. stops MPC (save first);
-2. copies the plugin to `/sdcard/Synths/ANDREALPHEUS - VST - LXRXXL ZYNTH/`;
+2. copies the plugin to `/sdcard/Synths/L'Cronx - VST - LXRXXL ZYNTH/`;
 3. adds it to MPC's plugin list;
 4. starts MPC again.
 
-Load **LXRXXL ZYNTH** (ANDREALPHEUS) as a plugin instrument. `uninstall.sh` removes it. INSTALL.md in the zip has
+Load **LXRXXL ZYNTH** (L'Cronx) as a plugin instrument. `uninstall.sh` removes it. INSTALL.md in the zip has
 the manual steps.
 
 ## Building

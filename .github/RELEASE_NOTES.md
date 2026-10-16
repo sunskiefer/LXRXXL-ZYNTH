@@ -1,3 +1,5 @@
+> **0.2.1** is 0.2.0 packed under L'Cronx (plugin folder `L'Cronx - VST - LXRXXL ZYNTH`); nothing else changed. Uninstall 0.2.0 first.
+
 LXRXXL ZYNTH for MPC OS 3.x (Akai Force / MPC), armv7. Unzip, then follow INSTALL.md (root SSH access, e.g. MockbaMod).
 `LXRXXL-ZYNTH-<version>-mpc-armv7.zip` is the plugin; `LXRXXL-ZYNTH-<version>-source.zip` its complete source
 (required by the LXR02 Open-Source license: non-commercial use only; MACRO, WAVE and PHYS are Mutable

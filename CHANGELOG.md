@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1
+- Packed under **L'Cronx**: the plugin folder is now `L'Cronx - VST - LXRXXL ZYNTH` and MPC lists the maker as L'Cronx. Nothing else
+  changed from 0.2.0. If you installed 0.2.0, run its `uninstall.sh` first (copy out anything you saved inside the plugin
+  folder), then install 0.2.1. The installer handles the ' in the folder name.
+
 ## 0.2.0
 - **An experimental synth:** 19 coded voices on unconventional maths. **DRONE**, **TEXTURE** and **FX** added; every
   voice has **20 controls of its own** (two rows of faders on the VOICE page: V7-V12 deeper controls per voice,

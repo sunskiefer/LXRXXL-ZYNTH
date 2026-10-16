@@ -3,12 +3,12 @@
 #   ./build.sh                     (MPC_VST=../mpc-vst-plugins to use another framework checkout)
 # Needs: python3 + Pillow, numpy and scipy, a host gcc (for shadow_art), and Zig (pip install ziglang): it compiles the C
 # and the C++ (the Mutable Instruments engines, third_party/mutable). No Docker.
-# Output: build/package/ANDREALPHEUS - VST - LXRXXL ZYNTH/  (skin + lxrxxl_zynth.so)
+# Output: build/package/L'Cronx - VST - LXRXXL ZYNTH/  (skin + lxrxxl_zynth.so)
 set -euo pipefail
 cd "$(dirname "$0")"
 MPC_VST="${MPC_VST:-$PWD/third_party/mpc-vst-plugins}"
 ZIG="${ZIG:-python3 -m ziglang}"
-NAME="ANDREALPHEUS - VST - LXRXXL ZYNTH"
+NAME="L'Cronx - VST - LXRXXL ZYNTH"
 . ./build_srcs.sh
 python3 tools/gen_params.py
 python3 tools/panel.py --check
